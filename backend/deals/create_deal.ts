@@ -10,6 +10,7 @@ export interface CreateDealRequest {
   expectedCloseDate?: Date;
   probability?: number;
   notes?: string;
+  assignedTo?: number;
 }
 
 export interface Deal {
@@ -23,6 +24,7 @@ export interface Deal {
   probability: number;
   lossReason?: string;
   notes?: string;
+  assignedTo?: number;
   createdAt: Date;
   updatedAt: Date;
   person?: {
@@ -48,8 +50,8 @@ export const createDeal = api<CreateDealRequest, Deal>(
       const probability = req.probability || 50;
       
       const dealRow = await crmDB.queryRow<{ id: number }>`
-        INSERT INTO deals (company_id, person_id, stage_id, title, value, expected_close_date, probability, notes, created_at, updated_at)
-        VALUES (${req.companyId}, ${req.personId || null}, ${req.stageId}, ${req.title}, ${req.value || null}, ${req.expectedCloseDate || null}, ${probability}, ${req.notes || null}, NOW(), NOW())
+        INSERT INTO deals (company_id, person_id, stage_id, title, value, expected_close_date, probability, notes, assigned_to, created_at, updated_at)
+        VALUES (${req.companyId}, ${req.personId || null}, ${req.stageId}, ${req.title}, ${req.value || null}, ${req.expectedCloseDate || null}, ${probability}, ${req.notes || null}, ${req.assignedTo || null}, NOW(), NOW())
         RETURNING id
       `;
 
@@ -70,6 +72,7 @@ export const createDeal = api<CreateDealRequest, Deal>(
           d.probability, 
           d.loss_reason, 
           d.notes, 
+          d.assigned_to,
           d.created_at, 
           d.updated_at,
           p.first_name as person_first_name,
@@ -96,6 +99,7 @@ export const createDeal = api<CreateDealRequest, Deal>(
         probability: number;
         loss_reason: string | null;
         notes: string | null;
+        assigned_to: number | null;
         created_at: Date;
         updated_at: Date;
         person_first_name: string | null;
@@ -127,6 +131,7 @@ export const createDeal = api<CreateDealRequest, Deal>(
         probability: row.probability || 0,
         lossReason: row.loss_reason || undefined,
         notes: row.notes || undefined,
+        assignedTo: row.assigned_to || undefined,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         person: row.person_id ? {

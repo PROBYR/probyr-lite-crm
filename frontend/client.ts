@@ -280,6 +280,7 @@ export namespace company {
  */
 import { createDeal as api_deals_create_deal_createDeal } from "~backend/deals/create_deal";
 import { listDeals as api_deals_list_deals_listDeals } from "~backend/deals/list_deals";
+import { listDealsTable as api_deals_list_deals_table_listDealsTable } from "~backend/deals/list_deals_table";
 import { testDealValueCasting as api_deals_test_deals_testDealValueCasting } from "~backend/deals/test_deals";
 import { updateDealStage as api_deals_update_deal_stage_updateDealStage } from "~backend/deals/update_deal_stage";
 
@@ -292,6 +293,7 @@ export namespace deals {
             this.baseClient = baseClient
             this.createDeal = this.createDeal.bind(this)
             this.listDeals = this.listDeals.bind(this)
+            this.listDealsTable = this.listDealsTable.bind(this)
             this.testDealValueCasting = this.testDealValueCasting.bind(this)
             this.updateDealStage = this.updateDealStage.bind(this)
         }
@@ -320,6 +322,24 @@ export namespace deals {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/deals`, {query, method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_deals_list_deals_listDeals>
+        }
+
+        /**
+         * Retrieves deals in table format for a specific pipeline.
+         */
+        public async listDealsTable(params: RequestType<typeof api_deals_list_deals_table_listDealsTable>): Promise<ResponseType<typeof api_deals_list_deals_table_listDealsTable>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                limit:      params.limit === undefined ? undefined : String(params.limit),
+                offset:     params.offset === undefined ? undefined : String(params.offset),
+                pipelineId: params.pipelineId === undefined ? undefined : String(params.pipelineId),
+                sortBy:     params.sortBy,
+                sortOrder:  params.sortOrder,
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/deals/table`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_deals_list_deals_table_listDealsTable>
         }
 
         /**
@@ -669,8 +689,10 @@ export namespace people {
  * Import the endpoint handlers to derive the types for the client.
  */
 import { create as api_pipelines_create_create } from "~backend/pipelines/create";
+import { deletePipeline as api_pipelines_delete_pipeline_deletePipeline } from "~backend/pipelines/delete_pipeline";
 import { get as api_pipelines_get_get } from "~backend/pipelines/get";
 import { list as api_pipelines_list_list } from "~backend/pipelines/list";
+import { updatePipeline as api_pipelines_update_pipeline_updatePipeline } from "~backend/pipelines/update_pipeline";
 
 export namespace pipelines {
 
@@ -680,17 +702,26 @@ export namespace pipelines {
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
             this.create = this.create.bind(this)
+            this.deletePipeline = this.deletePipeline.bind(this)
             this.get = this.get.bind(this)
             this.list = this.list.bind(this)
+            this.updatePipeline = this.updatePipeline.bind(this)
         }
 
         /**
-         * Creates a new pipeline.
+         * Creates a new pipeline with stages.
          */
         public async create(params: RequestType<typeof api_pipelines_create_create>): Promise<ResponseType<typeof api_pipelines_create_create>> {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/pipelines`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pipelines_create_create>
+        }
+
+        /**
+         * Deletes a pipeline if it contains no deals.
+         */
+        public async deletePipeline(params: { id: number }): Promise<void> {
+            await this.baseClient.callTypedAPI(`/pipelines/${encodeURIComponent(params.id)}`, {method: "DELETE", body: undefined})
         }
 
         /**
@@ -703,12 +734,27 @@ export namespace pipelines {
         }
 
         /**
-         * Lists all pipelines for a company.
+         * Lists all pipelines for a company with counts.
          */
         public async list(): Promise<ResponseType<typeof api_pipelines_list_list>> {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/pipelines`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pipelines_list_list>
+        }
+
+        /**
+         * Updates an existing pipeline and its stages.
+         */
+        public async updatePipeline(params: RequestType<typeof api_pipelines_update_pipeline_updatePipeline>): Promise<ResponseType<typeof api_pipelines_update_pipeline_updatePipeline>> {
+            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
+            const body: Record<string, any> = {
+                name:   params.name,
+                stages: params.stages,
+            }
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/pipelines/${encodeURIComponent(params.id)}`, {method: "PUT", body: JSON.stringify(body)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pipelines_update_pipeline_updatePipeline>
         }
     }
 }

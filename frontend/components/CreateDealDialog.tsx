@@ -20,13 +20,15 @@ interface CreateDealDialogProps {
   onOpenChange: (open: boolean) => void;
   onDealCreated: () => void;
   defaultPersonId?: number;
+  defaultPipelineId?: number;
 }
 
 export function CreateDealDialog({ 
   open, 
   onOpenChange, 
   onDealCreated, 
-  defaultPersonId 
+  defaultPersonId,
+  defaultPipelineId
 }: CreateDealDialogProps) {
   const [formData, setFormData] = useState({
     title: '',
@@ -36,6 +38,7 @@ export function CreateDealDialog({
     notes: '',
     personId: defaultPersonId,
     stageId: undefined as number | undefined,
+    assignedTo: undefined as number | undefined,
   });
   const { toast } = useToast();
 
@@ -52,10 +55,11 @@ export function CreateDealDialog({
   });
 
   const { data: stagesData } = useQuery({
-    queryKey: ['stages'],
+    queryKey: ['stages', defaultPipelineId],
     queryFn: async () => {
       try {
-        return await backend.stages.listStages({});
+        const params = defaultPipelineId ? { pipelineId: defaultPipelineId } : {};
+        return await backend.stages.listStages(params);
       } catch (error) {
         console.error('Failed to fetch stages:', error);
         return { stages: [] };
@@ -63,9 +67,22 @@ export function CreateDealDialog({
     },
   });
 
+  const { data: usersData } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      try {
+        return await backend.users.listUsers();
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+        return { users: [] };
+      }
+    },
+  });
+
   // Defensive defaults - always use arrays
   const safePeople = (peopleData?.people ?? []).filter(p => p && p.id);
   const safeStages = (stagesData?.stages ?? []).filter(s => s && s.id);
+  const safeUsers = (usersData?.users ?? []).filter(u => u && u.id && u.isActive);
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -78,6 +95,7 @@ export function CreateDealDialog({
         notes: data.notes || undefined,
         personId: data.personId,
         stageId: data.stageId || safeStages[0]?.id || 1, // Default to first stage
+        assignedTo: data.assignedTo,
       };
       return await backend.deals.createDeal(payload);
     },
@@ -104,6 +122,7 @@ export function CreateDealDialog({
       notes: '',
       personId: defaultPersonId,
       stageId: undefined,
+      assignedTo: undefined,
     });
   };
 
@@ -182,6 +201,29 @@ export function CreateDealDialog({
                 {safeStages.map((stage) => (
                   <SelectItem key={stage.id} value={String(stage.id)}>
                     {stage.name || 'Unnamed Stage'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="assigned-to">Assigned To</Label>
+            <Select 
+              value={formData.assignedTo?.toString()} 
+              onValueChange={(value) => setFormData(prev => ({ 
+                ...prev, 
+                assignedTo: value === 'unassigned' ? undefined : (value ? parseInt(value) : undefined)
+              }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select owner" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {safeUsers.map((user) => (
+                  <SelectItem key={user.id} value={String(user.id)}>
+                    {user.firstName || 'Unnamed'} {user.lastName || ''}
                   </SelectItem>
                 ))}
               </SelectContent>
