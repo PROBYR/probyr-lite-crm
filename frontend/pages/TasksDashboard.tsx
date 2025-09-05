@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import { CreateTaskDialog } from '../components/CreateTaskDialog';
+import { CreateTaskDialog } from '@/components/CreateTaskDialog';
 
 export function TasksDashboard() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);

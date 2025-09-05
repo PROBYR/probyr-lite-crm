@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { CreateDealDialog } from '../components/CreateDealDialog';
+import { CreateDealDialog } from '@/components/CreateDealDialog';
 
 export function Pipeline() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);

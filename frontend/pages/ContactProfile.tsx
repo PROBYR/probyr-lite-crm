@@ -18,10 +18,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import { EditPersonDialog } from '../components/EditPersonDialog';
-import { CreateTaskDialog } from '../components/CreateTaskDialog';
-import { CreateDealDialog } from '../components/CreateDealDialog';
-import { ActivityTimeline } from '../components/ActivityTimeline';
+import { EditPersonDialog } from '@/components/EditPersonDialog';
+import { CreateTaskDialog } from '@/components/CreateTaskDialog';
+import { CreateDealDialog } from '@/components/CreateDealDialog';
+import { ActivityTimeline } from '@/components/ActivityTimeline';
 
 export function ContactProfile() {
   const { id } = useParams<{ id: string }>();
