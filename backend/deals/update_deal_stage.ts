@@ -63,7 +63,7 @@ export const updateDealStage = api<UpdateDealStageParams & UpdateDealStageReques
     // Fetch updated deal
     const query = `
       SELECT 
-        d.id, d.company_id, d.person_id, d.stage_id, d.title, d.value::DOUBLE PRECISION as value, d.expected_close_date, d.probability, d.loss_reason, d.notes, d.created_at, d.updated_at,
+        d.id, d.company_id, d.person_id, d.stage_id, d.title, d.value::TEXT as value, d.expected_close_date, d.probability, d.loss_reason, d.notes, d.created_at, d.updated_at,
         p.first_name as person_first_name,
         p.last_name as person_last_name,
         p.email as person_email,
@@ -83,7 +83,7 @@ export const updateDealStage = api<UpdateDealStageParams & UpdateDealStageReques
       person_id: number | null;
       stage_id: number;
       title: string;
-      value: number | null;
+      value: string | null;
       expected_close_date: Date | null;
       probability: number;
       loss_reason: string | null;
@@ -109,7 +109,7 @@ export const updateDealStage = api<UpdateDealStageParams & UpdateDealStageReques
       personId: row.person_id || undefined,
       stageId: row.stage_id,
       title: row.title,
-      value: row.value || undefined,
+      value: row.value ? parseFloat(row.value) : undefined,
       expectedCloseDate: row.expected_close_date || undefined,
       probability: row.probability,
       lossReason: row.loss_reason || undefined,
