@@ -15,6 +15,7 @@ export function ContactsList() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [selectedTags, setSelectedTags] = useState<string | undefined>();
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const { toast } = useToast();
 
   const { data: peopleData, isLoading: peopleLoading, refetch: refetchPeople } = useQuery({
