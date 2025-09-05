@@ -76,6 +76,10 @@ export function CreateTaskDialog({
     },
   });
 
+  const safePeople = peopleData?.people || [];
+  const safeDeals = dealsData?.deals || [];
+  const safeUsers = usersData?.users || [];
+
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const payload = {
@@ -131,10 +135,10 @@ export function CreateTaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby="create-task-dialog-desc">
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
-          <DialogDescription>
+          <DialogDescription id="create-task-dialog-desc">
             Create a new task to stay on top of your work.
           </DialogDescription>
         </DialogHeader>
@@ -184,7 +188,7 @@ export function CreateTaskDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="unassigned">Unassigned</SelectItem>
-                {usersData?.users
+                {safeUsers
                   .filter(u => u.id)
                   .map((user) => (
                     <SelectItem key={user.id} value={String(user.id)}>
@@ -209,7 +213,7 @@ export function CreateTaskDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="no-contact">No contact</SelectItem>
-                {peopleData?.people
+                {safePeople
                   .filter(p => p.id)
                   .map((person) => (
                     <SelectItem key={person.id} value={String(person.id)}>
@@ -234,7 +238,7 @@ export function CreateTaskDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="no-deal">No deal</SelectItem>
-                {dealsData?.deals
+                {safeDeals
                   .filter(d => d.id)
                   .map((deal) => (
                     <SelectItem key={deal.id} value={String(deal.id)}>

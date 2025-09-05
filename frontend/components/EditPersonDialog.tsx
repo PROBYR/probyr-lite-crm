@@ -73,6 +73,9 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
     },
   });
 
+  const safeCompanies = companiesData?.companies || [];
+  const safeTags = tagsData?.tags || [];
+
   const updateMutation = useMutation({
     mutationFn: async (data: typeof formData & { tagIds: number[] }) => {
       return await backend.people.updatePerson({
@@ -121,10 +124,10 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby="edit-person-dialog-desc">
         <DialogHeader>
           <DialogTitle>Edit Contact</DialogTitle>
-          <DialogDescription>
+          <DialogDescription id="edit-person-dialog-desc">
             Make changes to this contact's profile. Click save when you're done.
           </DialogDescription>
         </DialogHeader>
@@ -192,7 +195,7 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="no-company">No company</SelectItem>
-                {companiesData?.companies
+                {safeCompanies
                   .filter(c => c.id)
                   .map((company) => (
                     <SelectItem key={company.id} value={String(company.id)}>
@@ -203,11 +206,11 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
             </Select>
           </div>
 
-          {tagsData && tagsData.tags.length > 0 && (
+          {safeTags.length > 0 && (
             <div>
               <Label>Tags</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
-                {tagsData.tags.map((tag) => (
+                {safeTags.map((tag) => (
                   <div key={tag.id} className="flex items-center space-x-2">
                     <Checkbox
                       id={`edit-tag-${tag.id}`}

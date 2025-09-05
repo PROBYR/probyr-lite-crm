@@ -63,6 +63,9 @@ export function CreateDealDialog({
     },
   });
 
+  const safePeople = peopleData?.people || [];
+  const safeStages = stagesData?.stages || [];
+
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const payload = {
@@ -73,7 +76,7 @@ export function CreateDealDialog({
         probability: parseInt(data.probability),
         notes: data.notes || undefined,
         personId: data.personId,
-        stageId: data.stageId || stagesData?.stages[0]?.id || 1, // Default to first stage
+        stageId: data.stageId || safeStages[0]?.id || 1, // Default to first stage
       };
       return await backend.deals.createDeal(payload);
     },
@@ -120,10 +123,10 @@ export function CreateDealDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby="create-deal-dialog-desc">
         <DialogHeader>
           <DialogTitle>Create New Deal</DialogTitle>
-          <DialogDescription>
+          <DialogDescription id="create-deal-dialog-desc">
             Create a new deal to track its progress through your sales pipeline.
           </DialogDescription>
         </DialogHeader>
@@ -153,7 +156,7 @@ export function CreateDealDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="no-contact">No contact</SelectItem>
-                {peopleData?.people
+                {safePeople
                   .filter(p => p.id)
                   .map((person) => (
                     <SelectItem key={person.id} value={String(person.id)}>
@@ -177,7 +180,7 @@ export function CreateDealDialog({
                 <SelectValue placeholder="Select stage" />
               </SelectTrigger>
               <SelectContent>
-                {stagesData?.stages
+                {safeStages
                   .filter(s => s.id)
                   .map((stage) => (
                     <SelectItem key={stage.id} value={String(stage.id)}>

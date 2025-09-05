@@ -57,6 +57,9 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated }: Crea
     },
   });
 
+  const safeCompanies = companiesData?.companies || [];
+  const safeTags = tagsData?.tags || [];
+
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData & { tagIds: number[] }) => {
       return await backend.people.createPerson(data);
@@ -115,10 +118,10 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated }: Crea
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby="create-person-dialog-desc">
         <DialogHeader>
           <DialogTitle>Add New Contact</DialogTitle>
-          <DialogDescription>
+          <DialogDescription id="create-person-dialog-desc">
             Add a new contact to your CRM. Fill in their details below.
           </DialogDescription>
         </DialogHeader>
@@ -186,7 +189,7 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated }: Crea
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="no-company">No company</SelectItem>
-                {companiesData?.companies
+                {safeCompanies
                   .filter(c => c.id)
                   .map((company) => (
                     <SelectItem key={company.id} value={String(company.id)}>
@@ -197,11 +200,11 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated }: Crea
             </Select>
           </div>
 
-          {tagsData && tagsData.tags.length > 0 && (
+          {safeTags.length > 0 && (
             <div>
               <Label>Tags</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
-                {tagsData.tags.map((tag) => (
+                {safeTags.map((tag) => (
                   <div key={tag.id} className="flex items-center space-x-2">
                     <Checkbox
                       id={`tag-${tag.id}`}
