@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Edit } from 'lucide-react';
 import backend from '~backend/client';
 import type { Person } from '~backend/people/get_person';
 import {
@@ -47,7 +46,7 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
       });
       setSelectedTags(person.tags.map(tag => tag.id));
     }
-  }, [person]);
+  }, [person, open]);
 
   const { data: companies } = useQuery({
     queryKey: ['companies'],
@@ -129,18 +128,18 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="firstName">First Name *</Label>
+              <Label htmlFor="edit-firstName">First Name *</Label>
               <Input
-                id="firstName"
+                id="edit-firstName"
                 value={formData.firstName}
                 onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
                 required
               />
             </div>
             <div>
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="edit-lastName">Last Name</Label>
               <Input
-                id="lastName"
+                id="edit-lastName"
                 value={formData.lastName}
                 onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
               />
@@ -148,9 +147,9 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
           </div>
 
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="edit-email">Email</Label>
             <Input
-              id="email"
+              id="edit-email"
               type="email"
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
@@ -158,25 +157,25 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
           </div>
 
           <div>
-            <Label htmlFor="phone">Phone</Label>
+            <Label htmlFor="edit-phone">Phone</Label>
             <Input
-              id="phone"
+              id="edit-phone"
               value={formData.phone}
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
             />
           </div>
 
           <div>
-            <Label htmlFor="jobTitle">Job Title</Label>
+            <Label htmlFor="edit-jobTitle">Job Title</Label>
             <Input
-              id="jobTitle"
+              id="edit-jobTitle"
               value={formData.jobTitle}
               onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
             />
           </div>
 
           <div>
-            <Label htmlFor="company">Company</Label>
+            <Label htmlFor="edit-company">Company</Label>
             <Select 
               value={formData.companyId?.toString() || ''} 
               onValueChange={(value) => setFormData(prev => ({ 
@@ -205,12 +204,12 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
                 {tags.tags.map((tag) => (
                   <div key={tag.id} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`tag-${tag.id}`}
+                      id={`edit-tag-${tag.id}`}
                       checked={selectedTags.includes(tag.id)}
                       onCheckedChange={() => handleTagToggle(tag.id)}
                     />
                     <Label 
-                      htmlFor={`tag-${tag.id}`}
+                      htmlFor={`edit-tag-${tag.id}`}
                       className="flex items-center gap-2"
                     >
                       <div 

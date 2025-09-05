@@ -35,7 +35,12 @@ export function TasksDashboard() {
         });
       } catch (error) {
         console.error('Failed to fetch today tasks:', error);
-        return { tasks: [], total: 0 };
+        toast({
+          title: "Error",
+          description: "Failed to load today's tasks.",
+          variant: "destructive",
+        });
+        throw error;
       }
     },
   });
@@ -51,7 +56,12 @@ export function TasksDashboard() {
         });
       } catch (error) {
         console.error('Failed to fetch overdue tasks:', error);
-        return { tasks: [], total: 0 };
+        toast({
+          title: "Error",
+          description: "Failed to load overdue tasks.",
+          variant: "destructive",
+        });
+        throw error;
       }
     },
   });
@@ -66,7 +76,12 @@ export function TasksDashboard() {
         });
       } catch (error) {
         console.error('Failed to fetch upcoming tasks:', error);
-        return { tasks: [], total: 0 };
+        toast({
+          title: "Error",
+          description: "Failed to load upcoming tasks.",
+          variant: "destructive",
+        });
+        throw error;
       }
     },
   });
@@ -78,7 +93,12 @@ export function TasksDashboard() {
         return await backend.tasks.listTasks({});
       } catch (error) {
         console.error('Failed to fetch all tasks:', error);
-        return { tasks: [], total: 0 };
+        toast({
+          title: "Error",
+          description: "Failed to load all tasks.",
+          variant: "destructive",
+        });
+        throw error;
       }
     },
   });
@@ -121,6 +141,7 @@ export function TasksDashboard() {
     if (!date) return 'No due date';
     const taskDate = new Date(date);
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const diffTime = taskDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     

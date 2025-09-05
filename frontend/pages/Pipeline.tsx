@@ -31,7 +31,7 @@ export function Pipeline() {
     },
   });
 
-  const { data: deals, isLoading: dealsLoading } = useQuery({
+  const { data: deals, isLoading: dealsLoading, refetch: refetchDeals } = useQuery({
     queryKey: ['deals'],
     queryFn: async () => {
       try {
@@ -66,6 +66,7 @@ export function Pipeline() {
         description: "Failed to move deal. Please try again.",
         variant: "destructive",
       });
+      refetchDeals();
     },
   });
 

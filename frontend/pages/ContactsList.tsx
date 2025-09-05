@@ -47,7 +47,12 @@ export function ContactsList() {
         return await backend.tags.listTags({});
       } catch (error) {
         console.error('Failed to fetch tags:', error);
-        return { tags: [] };
+        toast({
+          title: "Error",
+          description: "Failed to load tags. Please try again.",
+          variant: "destructive",
+        });
+        throw error;
       }
     },
   });

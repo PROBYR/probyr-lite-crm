@@ -46,10 +46,10 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
   const formatDate = (date: Date) => {
     const now = new Date();
     const activityDate = new Date(date);
-    const diffTime = Math.abs(now.getTime() - activityDate.getTime());
+    const diffTime = now.getTime() - activityDate.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 1) return 'Today';
+    if (diffDays <= 1) return 'Today';
     if (diffDays === 2) return 'Yesterday';
     if (diffDays < 7) return `${diffDays - 1} days ago`;
     return activityDate.toLocaleDateString();
@@ -74,11 +74,11 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
               {getActivityIcon(activity.activityType)}
             </div>
             {index < activities.length - 1 && (
-              <div className="w-px h-8 bg-gray-200 mx-auto mt-2" />
+              <div className="w-px h-full bg-gray-200 mx-auto mt-2" />
             )}
           </div>
           
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pb-4">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-2">

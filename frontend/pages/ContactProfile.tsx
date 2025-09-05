@@ -58,7 +58,12 @@ export function ContactProfile() {
         return await backend.deals.listDeals({ personId: parseInt(id) });
       } catch (error) {
         console.error('Failed to fetch deals:', error);
-        return { deals: [], total: 0 };
+        toast({
+          title: "Error",
+          description: "Failed to load deals. Please try again.",
+          variant: "destructive",
+        });
+        throw error;
       }
     },
     enabled: !!id,
@@ -72,7 +77,12 @@ export function ContactProfile() {
         return await backend.tasks.listTasks({ personId: parseInt(id) });
       } catch (error) {
         console.error('Failed to fetch tasks:', error);
-        return { tasks: [], total: 0 };
+        toast({
+          title: "Error",
+          description: "Failed to load tasks. Please try again.",
+          variant: "destructive",
+        });
+        throw error;
       }
     },
     enabled: !!id,
@@ -86,7 +96,12 @@ export function ContactProfile() {
         return await backend.activities.listActivities({ personId: parseInt(id) });
       } catch (error) {
         console.error('Failed to fetch activities:', error);
-        return { activities: [], total: 0 };
+        toast({
+          title: "Error",
+          description: "Failed to load activities. Please try again.",
+          variant: "destructive",
+        });
+        throw error;
       }
     },
     enabled: !!id,
@@ -124,7 +139,7 @@ export function ContactProfile() {
   };
 
   const handleTaskCreated = () => {
-    queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    queryClient.invalidateQueries({ queryKey: ['tasks', 'person', id] });
     setShowTaskDialog(false);
     toast({
       title: "Success",
@@ -133,7 +148,7 @@ export function ContactProfile() {
   };
 
   const handleDealCreated = () => {
-    queryClient.invalidateQueries({ queryKey: ['deals'] });
+    queryClient.invalidateQueries({ queryKey: ['deals', 'person', id] });
     setShowDealDialog(false);
     toast({
       title: "Success",
