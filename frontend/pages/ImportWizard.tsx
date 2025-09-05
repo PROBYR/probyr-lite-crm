@@ -217,14 +217,14 @@ export function ImportWizard() {
             </div>
             <div className="w-2/3">
               <Select
-                value={fieldMapping[index] || ''}
-                onValueChange={(value) => setFieldMapping({ ...fieldMapping, [index]: value })}
+                value={fieldMapping[index]}
+                onValueChange={(value) => setFieldMapping({ ...fieldMapping, [index]: value === 'dont-import' ? '' : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select field" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Don't import</SelectItem>
+                  <SelectItem value="dont-import">Don't import</SelectItem>
                   {fieldOptions.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}

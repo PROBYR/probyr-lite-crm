@@ -38,7 +38,7 @@ export function CreateDealDialog({
   });
   const { toast } = useToast();
 
-  const { data: people } = useQuery({
+  const { data: peopleData } = useQuery({
     queryKey: ['people'],
     queryFn: async () => {
       try {
@@ -50,7 +50,7 @@ export function CreateDealDialog({
     },
   });
 
-  const { data: stages } = useQuery({
+  const { data: stagesData } = useQuery({
     queryKey: ['stages'],
     queryFn: async () => {
       try {
@@ -72,7 +72,7 @@ export function CreateDealDialog({
         probability: parseInt(data.probability),
         notes: data.notes || undefined,
         personId: data.personId,
-        stageId: data.stageId || stages?.stages[0]?.id || 1, // Default to first stage
+        stageId: data.stageId || stagesData?.stages[0]?.id || 1, // Default to first stage
       };
       return await backend.deals.createDeal(payload);
     },
@@ -138,21 +138,23 @@ export function CreateDealDialog({
           <div>
             <Label htmlFor="contact">Contact</Label>
             <Select 
-              value={formData.personId?.toString() || ''} 
+              value={formData.personId?.toString()} 
               onValueChange={(value) => setFormData(prev => ({ 
                 ...prev, 
-                personId: value ? parseInt(value) : undefined 
+                personId: value === 'no-contact' ? undefined : (value ? parseInt(value) : undefined)
               }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select contact" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No contact</SelectItem>
-                {people?.people.map((person) => (
-                  <SelectItem key={person.id} value={person.id.toString()}>
-                    {person.firstName} {person.lastName}
-                  </SelectItem>
+                <SelectItem value="no-contact">No contact</SelectItem>
+                {peopleData?.people
+                  .filter(p => p.id)
+                  .map((person) => (
+                    <SelectItem key={person.id} value={String(person.id)}>
+                      {person.firstName || 'Unnamed'} {person.lastName || ''}
+                    </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -161,7 +163,7 @@ export function CreateDealDialog({
           <div>
             <Label htmlFor="stage">Stage</Label>
             <Select 
-              value={formData.stageId?.toString() || ''} 
+              value={formData.stageId?.toString()} 
               onValueChange={(value) => setFormData(prev => ({ 
                 ...prev, 
                 stageId: value ? parseInt(value) : undefined 
@@ -171,10 +173,12 @@ export function CreateDealDialog({
                 <SelectValue placeholder="Select stage" />
               </SelectTrigger>
               <SelectContent>
-                {stages?.stages.map((stage) => (
-                  <SelectItem key={stage.id} value={stage.id.toString()}>
-                    {stage.name}
-                  </SelectItem>
+                {stagesData?.stages
+                  .filter(s => s.id)
+                  .map((stage) => (
+                    <SelectItem key={stage.id} value={String(stage.id)}>
+                      {stage.name || 'Unnamed Stage'}
+                    </SelectItem>
                 ))}
               </SelectContent>
             </Select>

@@ -48,7 +48,7 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
     }
   }, [person, open]);
 
-  const { data: companies } = useQuery({
+  const { data: companiesData } = useQuery({
     queryKey: ['companies'],
     queryFn: async () => {
       try {
@@ -60,7 +60,7 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
     },
   });
 
-  const { data: tags } = useQuery({
+  const { data: tagsData } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
       try {
@@ -177,31 +177,33 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
           <div>
             <Label htmlFor="edit-company">Company</Label>
             <Select 
-              value={formData.companyId?.toString() || ''} 
+              value={formData.companyId?.toString()} 
               onValueChange={(value) => setFormData(prev => ({ 
                 ...prev, 
-                companyId: value ? parseInt(value) : undefined 
+                companyId: value === 'no-company' ? undefined : (value ? parseInt(value) : undefined)
               }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select company" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No company</SelectItem>
-                {companies?.companies.map((company) => (
-                  <SelectItem key={company.id} value={company.id.toString()}>
-                    {company.name}
-                  </SelectItem>
+                <SelectItem value="no-company">No company</SelectItem>
+                {companiesData?.companies
+                  .filter(c => c.id)
+                  .map((company) => (
+                    <SelectItem key={company.id} value={String(company.id)}>
+                      {company.name || 'Unnamed Company'}
+                    </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {tags && tags.tags.length > 0 && (
+          {tagsData && tagsData.tags.length > 0 && (
             <div>
               <Label>Tags</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
-                {tags.tags.map((tag) => (
+                {tagsData.tags.map((tag) => (
                   <div key={tag.id} className="flex items-center space-x-2">
                     <Checkbox
                       id={`edit-tag-${tag.id}`}

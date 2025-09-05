@@ -14,8 +14,7 @@ import { CreatePersonDialog } from '@/components/CreatePersonDialog';
 export function ContactsList() {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('name');
-  const [selectedTags, setSelectedTags] = useState<string>('');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string | undefined>();
   const { toast } = useToast();
 
   const { data: peopleData, isLoading: peopleLoading, refetch: refetchPeople } = useQuery({
@@ -117,15 +116,15 @@ export function ContactsList() {
           </SelectContent>
         </Select>
 
-        <Select value={selectedTags} onValueChange={setSelectedTags}>
+        <Select value={selectedTags} onValueChange={(v) => setSelectedTags(v === 'all-tags' ? undefined : v)}>
           <SelectTrigger className="w-full lg:w-48">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue placeholder="Filter by tags" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All tags</SelectItem>
+            <SelectItem value="all-tags">All tags</SelectItem>
             {tagsData?.tags.map((tag) => (
-              <SelectItem key={tag.id} value={tag.id.toString()}>
+              <SelectItem key={tag.id} value={String(tag.id)}>
                 <div className="flex items-center gap-2">
                   <div 
                     className="w-3 h-3 rounded-full" 

@@ -39,7 +39,7 @@ export function CreateTaskDialog({
   });
   const { toast } = useToast();
 
-  const { data: people } = useQuery({
+  const { data: peopleData } = useQuery({
     queryKey: ['people'],
     queryFn: async () => {
       try {
@@ -51,7 +51,7 @@ export function CreateTaskDialog({
     },
   });
 
-  const { data: deals } = useQuery({
+  const { data: dealsData } = useQuery({
     queryKey: ['deals'],
     queryFn: async () => {
       try {
@@ -59,6 +59,18 @@ export function CreateTaskDialog({
       } catch (error) {
         console.error('Failed to fetch deals:', error);
         return { deals: [], total: 0 };
+      }
+    },
+  });
+
+  const { data: usersData } = useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      try {
+        return await backend.users.listUsers();
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+        return { users: [] };
       }
     },
   });
@@ -157,19 +169,24 @@ export function CreateTaskDialog({
           <div>
             <Label htmlFor="assignedTo">Assigned To</Label>
             <Select 
-              value={formData.assignedTo?.toString() || ''} 
+              value={formData.assignedTo?.toString()} 
               onValueChange={(value) => setFormData(prev => ({ 
                 ...prev, 
-                assignedTo: value ? parseInt(value) : undefined 
+                assignedTo: value === 'unassigned' ? undefined : (value ? parseInt(value) : undefined)
               }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select assignee" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Unassigned</SelectItem>
-                <SelectItem value="1">Admin User</SelectItem>
-                <SelectItem value="2">Team Member</SelectItem>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {usersData?.users
+                  .filter(u => u.id)
+                  .map((user) => (
+                    <SelectItem key={user.id} value={String(user.id)}>
+                      {user.firstName || 'Unnamed'} {user.lastName || ''}
+                    </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -177,21 +194,23 @@ export function CreateTaskDialog({
           <div>
             <Label htmlFor="contact">Related Contact</Label>
             <Select 
-              value={formData.personId?.toString() || ''} 
+              value={formData.personId?.toString()} 
               onValueChange={(value) => setFormData(prev => ({ 
                 ...prev, 
-                personId: value ? parseInt(value) : undefined 
+                personId: value === 'no-contact' ? undefined : (value ? parseInt(value) : undefined)
               }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select contact" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No contact</SelectItem>
-                {people?.people.map((person) => (
-                  <SelectItem key={person.id} value={person.id.toString()}>
-                    {person.firstName} {person.lastName}
-                  </SelectItem>
+                <SelectItem value="no-contact">No contact</SelectItem>
+                {peopleData?.people
+                  .filter(p => p.id)
+                  .map((person) => (
+                    <SelectItem key={person.id} value={String(person.id)}>
+                      {person.firstName || 'Unnamed'} {person.lastName || ''}
+                    </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -200,21 +219,23 @@ export function CreateTaskDialog({
           <div>
             <Label htmlFor="deal">Related Deal</Label>
             <Select 
-              value={formData.dealId?.toString() || ''} 
+              value={formData.dealId?.toString()} 
               onValueChange={(value) => setFormData(prev => ({ 
                 ...prev, 
-                dealId: value ? parseInt(value) : undefined 
+                dealId: value === 'no-deal' ? undefined : (value ? parseInt(value) : undefined)
               }))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select deal" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No deal</SelectItem>
-                {deals?.deals.map((deal) => (
-                  <SelectItem key={deal.id} value={deal.id.toString()}>
-                    {deal.title}
-                  </SelectItem>
+                <SelectItem value="no-deal">No deal</SelectItem>
+                {dealsData?.deals
+                  .filter(d => d.id)
+                  .map((deal) => (
+                    <SelectItem key={deal.id} value={String(deal.id)}>
+                      {deal.title || 'Untitled Deal'}
+                    </SelectItem>
                 ))}
               </SelectContent>
             </Select>
