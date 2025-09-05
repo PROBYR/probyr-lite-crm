@@ -4,6 +4,7 @@ import backend from '~backend/client';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -117,6 +118,9 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated }: Crea
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Contact</DialogTitle>
+          <DialogDescription>
+            Add a new contact to your CRM. Fill in their details below.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">

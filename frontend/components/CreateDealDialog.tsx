@@ -4,6 +4,7 @@ import backend from '~backend/client';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -122,6 +123,9 @@ export function CreateDealDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create New Deal</DialogTitle>
+          <DialogDescription>
+            Create a new deal to track its progress through your sales pipeline.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">

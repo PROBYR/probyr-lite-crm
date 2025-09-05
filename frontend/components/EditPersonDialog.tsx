@@ -5,6 +5,7 @@ import type { Person } from '~backend/people/get_person';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -123,6 +124,9 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Contact</DialogTitle>
+          <DialogDescription>
+            Make changes to this contact's profile. Click save when you're done.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
