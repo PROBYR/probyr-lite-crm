@@ -63,12 +63,10 @@ export const updateDealStage = api<UpdateDealStageParams & UpdateDealStageReques
     // Fetch updated deal
     const query = `
       SELECT 
-        d.*,
-        p.id as person_id,
+        d.id, d.company_id, d.person_id, d.stage_id, d.title, d.value::DOUBLE PRECISION as value, d.expected_close_date, d.probability, d.loss_reason, d.notes, d.created_at, d.updated_at,
         p.first_name as person_first_name,
         p.last_name as person_last_name,
         p.email as person_email,
-        ds.id as stage_id,
         ds.name as stage_name,
         ds.position as stage_position,
         ds.is_won as stage_is_won,
