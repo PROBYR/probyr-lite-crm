@@ -59,7 +59,9 @@ export const createDeal = api<CreateDealRequest, Deal>(
     // Fetch the created deal with full details
     const query = `
       SELECT 
-        d.id, d.company_id, d.person_id, d.stage_id, d.title, d.value, d.expected_close_date, d.probability, d.loss_reason, d.notes, d.created_at, d.updated_at,
+        d.id, d.company_id, d.person_id, d.stage_id, d.title, 
+        CAST(d.value AS DOUBLE PRECISION) as value,
+        d.expected_close_date, d.probability, d.loss_reason, d.notes, d.created_at, d.updated_at,
         p.first_name as person_first_name,
         p.last_name as person_last_name,
         p.email as person_email,
