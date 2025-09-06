@@ -8,13 +8,14 @@ export interface User {
   firstName: string;
   lastName?: string;
   role: 'admin' | 'member';
+  isActive: boolean;
 }
 
 export interface ListUsersResponse {
   users: User[];
 }
 
-// Retrieves all active users.
+// Retrieves all users for a company.
 export const listUsers = api<void, ListUsersResponse>({
   expose: true,
   method: "GET",
@@ -22,9 +23,8 @@ export const listUsers = api<void, ListUsersResponse>({
 }, async () => {
   try {
     const rows = await crmDB.queryAll<any>`
-      SELECT id, company_id, email, first_name, last_name, role 
+      SELECT id, company_id, email, first_name, last_name, role, is_active
       FROM users 
-      WHERE is_active = TRUE 
       ORDER BY first_name, last_name
     `;
     
@@ -35,6 +35,7 @@ export const listUsers = api<void, ListUsersResponse>({
       firstName: row.first_name || '',
       lastName: row.last_name || undefined,
       role: row.role,
+      isActive: row.is_active,
     }));
 
     return { users };

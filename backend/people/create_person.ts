@@ -46,7 +46,7 @@ export const createPerson = api<CreatePersonRequest, Person>(
       // Insert person
       const personRow = await tx.queryRow<{ id: number }>`
         INSERT INTO people (company_id, first_name, last_name, email, phone, job_title, status, created_at, updated_at)
-        VALUES (${req.companyId || null}, ${req.firstName}, ${req.lastName || null}, ${req.email || null}, ${req.phone || null}, ${req.jobTitle || null}, ${req.status || 'New Lead'}, NOW(), NOW())
+        VALUES (${req.companyId || 1}, ${req.firstName}, ${req.lastName || null}, ${req.email || null}, ${req.phone || null}, ${req.jobTitle || null}, ${req.status || 'New Lead'}, NOW(), NOW())
         RETURNING id
       `;
 
