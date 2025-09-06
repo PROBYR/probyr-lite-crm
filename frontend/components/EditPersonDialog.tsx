@@ -30,6 +30,7 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
     email: '',
     phone: '',
     jobTitle: '',
+    status: '',
     companyId: undefined as number | undefined,
   });
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
@@ -43,6 +44,7 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
         email: person.email || '',
         phone: person.phone || '',
         jobTitle: person.jobTitle || '',
+        status: person.status || 'New Lead',
         companyId: person.companyId,
       });
       setSelectedTags(person.tags.map(tag => tag.id));
@@ -181,29 +183,48 @@ export function EditPersonDialog({ person, open, onOpenChange, onPersonUpdated }
             />
           </div>
 
-          <div>
-            <Label htmlFor="edit-company">Company</Label>
-            <Select 
-              value={formData.companyId?.toString()} 
-              onValueChange={(value) => setFormData(prev => ({ 
-                ...prev, 
-                companyId: value === 'no-company' ? undefined : (value ? parseInt(value) : undefined)
-              }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select company" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="no-company">No company</SelectItem>
-                {safeCompanies
-                  .filter(c => c.id)
-                  .map((company) => (
-                    <SelectItem key={company.id} value={String(company.id)}>
-                      {company.name || 'Unnamed Company'}
-                    </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="edit-company">Company</Label>
+              <Select 
+                value={formData.companyId?.toString()} 
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  companyId: value === 'no-company' ? undefined : (value ? parseInt(value) : undefined)
+                }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select company" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no-company">No company</SelectItem>
+                  {safeCompanies
+                    .filter(c => c.id)
+                    .map((company) => (
+                      <SelectItem key={company.id} value={String(company.id)}>
+                        {company.name || 'Unnamed Company'}
+                      </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-status">Status</Label>
+              <Select 
+                value={formData.status} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="New Lead">New Lead</SelectItem>
+                  <SelectItem value="Contacted">Contacted</SelectItem>
+                  <SelectItem value="Reply Received">Reply Received</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {safeTags.length > 0 && (

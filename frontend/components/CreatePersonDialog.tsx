@@ -28,104 +28,43 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated }: Crea
     email: '',
     phone: '',
     jobTitle: '',
+    status: 'New Lead',
     companyId: undefined as number | undefined,
   });
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const { toast } = useToast();
 
-  const { data: companiesData, isLoading: companiesLoading } = useQuery({
+  const { data: companiesData } = useQuery({
     queryKey: ['companies'],
     queryFn: async () => {
       try {
-        const result = await backend.company.listCompanies();
-        // Ensure we always return a proper structure
-        return result || { companies: [] };
+        return await backend.company.listCompanies();
       } catch (error) {
         console.error('Failed to fetch companies:', error);
-        // Return safe fallback instead of throwing
         return { companies: [] };
       }
     },
-    // Add default data to prevent undefined state
-    initialData: { companies: [] },
-    // Prevent aggressive refetching that might cause undefined states
-    staleTime: 30000,
-    retry: (failureCount, error) => {
-      // Limit retries to prevent endless undefined states
-      return failureCount < 2;
-    },
   });
 
-  const { data: tagsData, isLoading: tagsLoading } = useQuery({
+  const { data: tagsData } = useQuery({
     queryKey: ['tags'],
     queryFn: async () => {
       try {
-        const result = await backend.tags.listTags({});
-        // Ensure we always return a proper structure
-        return result || { tags: [] };
+        return await backend.tags.listTags({});
       } catch (error) {
         console.error('Failed to fetch tags:', error);
-        // Return safe fallback instead of throwing
         return { tags: [] };
       }
     },
-    // Add default data to prevent undefined state
-    initialData: { tags: [] },
-    // Prevent aggressive refetching that might cause undefined states
-    staleTime: 30000,
-    retry: (failureCount, error) => {
-      // Limit retries to prevent endless undefined states
-      return failureCount < 2;
-    },
   });
 
-  // Multiple layers of safety for array access
-  const safeCompanies = React.useMemo(() => {
-    // First check if data exists and has companies property
-    if (!companiesData || typeof companiesData !== 'object') {
-      return [];
-    }
-    
-    // Then check if companies is an array
-    if (!Array.isArray(companiesData.companies)) {
-      return [];
-    }
-    
-    // Finally filter with additional safety checks
-    return companiesData.companies.filter(company => {
-      return (
-        company && 
-        typeof company === 'object' && 
-        typeof company.id === 'number' && 
-        typeof company.name === 'string' && 
-        company.name.trim().length > 0
-      );
-    });
-  }, [companiesData]);
-
-  const safeTags = React.useMemo(() => {
-    // First check if data exists and has tags property
-    if (!tagsData || typeof tagsData !== 'object') {
-      return [];
-    }
-    
-    // Then check if tags is an array
-    if (!Array.isArray(tagsData.tags)) {
-      return [];
-    }
-    
-    // Finally filter with additional safety checks
-    return tagsData.tags.filter(tag => {
-      return (
-        tag && 
-        typeof tag === 'object' && 
-        typeof tag.id === 'number' && 
-        typeof tag.name === 'string' && 
-        tag.name.trim().length > 0 &&
-        typeof tag.color === 'string'
-      );
-    });
-  }, [tagsData]);
+  const safeCompanies = Array.isArray(companiesData?.companies) 
+    ? companiesData.companies.filter(c => c && c.id && c.name) 
+    : [];
+  
+  const safeTags = Array.isArray(tagsData?.tags) 
+    ? tagsData.tags.filter(t => t && t.id && t.name) 
+    : [];
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData & { tagIds: number[] }) => {
@@ -152,6 +91,7 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated }: Crea
       email: '',
       phone: '',
       jobTitle: '',
+      status: 'New Lead',
       companyId: undefined,
     });
     setSelectedTags([]);
@@ -242,63 +182,72 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated }: Crea
             />
           </div>
 
-          <div>
-            <Label htmlFor="company">Company</Label>
-            <Select 
-              value={formData.companyId?.toString()} 
-              onValueChange={(value) => setFormData(prev => ({ 
-                ...prev, 
-                companyId: value === 'no-company' ? undefined : (value ? parseInt(value) : undefined)
-              }))}
-              disabled={companiesLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={companiesLoading ? "Loading companies..." : "Select company"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="no-company">No company</SelectItem>
-                {safeCompanies.map((company) => (
-                  <SelectItem key={company.id} value={String(company.id)}>
-                    {company.name}
-                  </SelectItem>
-                ))}
-                {safeCompanies.length === 0 && !companiesLoading && (
-                  <SelectItem value="no-companies" disabled>
-                    No companies available
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="company">Company</Label>
+              <Select 
+                value={formData.companyId?.toString()} 
+                onValueChange={(value) => setFormData(prev => ({ 
+                  ...prev, 
+                  companyId: value === 'no-company' ? undefined : (value ? parseInt(value) : undefined)
+                }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select company" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no-company">No company</SelectItem>
+                  {safeCompanies.map((company) => (
+                    <SelectItem key={company.id} value={String(company.id)}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select 
+                value={formData.status} 
+                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="New Lead">New Lead</SelectItem>
+                  <SelectItem value="Contacted">Contacted</SelectItem>
+                  <SelectItem value="Reply Received">Reply Received</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {safeTags.length > 0 && (
             <div>
               <Label>Tags</Label>
-              {tagsLoading ? (
-                <div className="text-sm text-gray-500 mt-2">Loading tags...</div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {safeTags.map((tag) => (
-                    <div key={tag.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`tag-${tag.id}`}
-                        checked={selectedTags.includes(tag.id)}
-                        onCheckedChange={() => handleTagToggle(tag.id)}
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {safeTags.map((tag) => (
+                  <div key={tag.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`tag-${tag.id}`}
+                      checked={selectedTags.includes(tag.id)}
+                      onCheckedChange={() => handleTagToggle(tag.id)}
+                    />
+                    <Label 
+                      htmlFor={`tag-${tag.id}`}
+                      className="flex items-center gap-2"
+                    >
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: tag.color }}
                       />
-                      <Label 
-                        htmlFor={`tag-${tag.id}`}
-                        className="flex items-center gap-2"
-                      >
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: tag.color }}
-                        />
-                        {tag.name}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              )}
+                      {tag.name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -310,10 +259,7 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated }: Crea
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={createMutation.isPending || companiesLoading || tagsLoading}
-            >
+            <Button type="submit" disabled={createMutation.isPending}>
               {createMutation.isPending ? 'Creating...' : 'Create Contact'}
             </Button>
           </div>

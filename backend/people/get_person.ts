@@ -13,6 +13,7 @@ export interface Person {
   email?: string;
   phone?: string;
   jobTitle?: string;
+  status: string;
   lastContactedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -58,6 +59,7 @@ export const getPerson = api<GetPersonParams, Person>(
       email: string | null;
       phone: string | null;
       job_title: string | null;
+      status: string;
       last_contacted_at: Date | null;
       created_at: Date;
       updated_at: Date;
@@ -77,6 +79,7 @@ export const getPerson = api<GetPersonParams, Person>(
       email: row.email || undefined,
       phone: row.phone || undefined,
       jobTitle: row.job_title || undefined,
+      status: row.status,
       lastContactedAt: row.last_contacted_at || undefined,
       createdAt: row.created_at,
       updatedAt: row.updated_at,

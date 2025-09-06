@@ -12,6 +12,7 @@ export interface UpdatePersonRequest {
   email?: string;
   phone?: string;
   jobTitle?: string;
+  status?: string;
   tagIds?: number[];
 }
 
@@ -23,6 +24,7 @@ export interface Person {
   email?: string;
   phone?: string;
   jobTitle?: string;
+  status: string;
   lastContactedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -81,6 +83,10 @@ export const updatePerson = api<UpdatePersonParams & UpdatePersonRequest, Person
       if (req.companyId !== undefined) {
         updates.push(`company_id = $${paramIndex++}`);
         values.push(req.companyId);
+      }
+      if (req.status !== undefined) {
+        updates.push(`status = $${paramIndex++}`);
+        values.push(req.status);
       }
 
       updates.push(`updated_at = $${paramIndex++}`);
@@ -142,6 +148,7 @@ export const updatePerson = api<UpdatePersonParams & UpdatePersonRequest, Person
         email: string | null;
         phone: string | null;
         job_title: string | null;
+        status: string;
         last_contacted_at: Date | null;
         created_at: Date;
         updated_at: Date;
@@ -161,6 +168,7 @@ export const updatePerson = api<UpdatePersonParams & UpdatePersonRequest, Person
         email: row.email || undefined,
         phone: row.phone || undefined,
         jobTitle: row.job_title || undefined,
+        status: row.status,
         lastContactedAt: row.last_contacted_at || undefined,
         createdAt: row.created_at,
         updatedAt: row.updated_at,

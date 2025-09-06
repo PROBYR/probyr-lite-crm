@@ -8,6 +8,7 @@ export interface CreatePersonRequest {
   email?: string;
   phone?: string;
   jobTitle?: string;
+  status?: string;
   tagIds?: number[];
 }
 
@@ -19,6 +20,7 @@ export interface Person {
   email?: string;
   phone?: string;
   jobTitle?: string;
+  status: string;
   lastContactedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -43,8 +45,8 @@ export const createPerson = api<CreatePersonRequest, Person>(
     try {
       // Insert person
       const personRow = await tx.queryRow<{ id: number }>`
-        INSERT INTO people (company_id, first_name, last_name, email, phone, job_title, created_at, updated_at)
-        VALUES (${req.companyId || null}, ${req.firstName}, ${req.lastName || null}, ${req.email || null}, ${req.phone || null}, ${req.jobTitle || null}, NOW(), NOW())
+        INSERT INTO people (company_id, first_name, last_name, email, phone, job_title, status, created_at, updated_at)
+        VALUES (${req.companyId || null}, ${req.firstName}, ${req.lastName || null}, ${req.email || null}, ${req.phone || null}, ${req.jobTitle || null}, ${req.status || 'New Lead'}, NOW(), NOW())
         RETURNING id
       `;
 
@@ -95,6 +97,7 @@ export const createPerson = api<CreatePersonRequest, Person>(
         email: string | null;
         phone: string | null;
         job_title: string | null;
+        status: string;
         last_contacted_at: Date | null;
         created_at: Date;
         updated_at: Date;
@@ -114,6 +117,7 @@ export const createPerson = api<CreatePersonRequest, Person>(
         email: row.email || undefined,
         phone: row.phone || undefined,
         jobTitle: row.job_title || undefined,
+        status: row.status,
         lastContactedAt: row.last_contacted_at || undefined,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
