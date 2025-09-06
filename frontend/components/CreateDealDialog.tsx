@@ -63,8 +63,9 @@ export function CreateDealDialog({
     },
   });
 
-  const safePeople = peopleData?.people || [];
-  const safeStages = stagesData?.stages || [];
+  // Defensive defaults - always use arrays
+  const safePeople = (peopleData?.people ?? []).filter(p => p && p.id);
+  const safeStages = (stagesData?.stages ?? []).filter(s => s && s.id);
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -156,12 +157,10 @@ export function CreateDealDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="no-contact">No contact</SelectItem>
-                {safePeople
-                  .filter(p => p.id)
-                  .map((person) => (
-                    <SelectItem key={person.id} value={String(person.id)}>
-                      {person.firstName || 'Unnamed'} {person.lastName || ''}
-                    </SelectItem>
+                {safePeople.map((person) => (
+                  <SelectItem key={person.id} value={String(person.id)}>
+                    {person.firstName || 'Unnamed'} {person.lastName || ''}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -180,12 +179,10 @@ export function CreateDealDialog({
                 <SelectValue placeholder="Select stage" />
               </SelectTrigger>
               <SelectContent>
-                {safeStages
-                  .filter(s => s.id)
-                  .map((stage) => (
-                    <SelectItem key={stage.id} value={String(stage.id)}>
-                      {stage.name || 'Unnamed Stage'}
-                    </SelectItem>
+                {safeStages.map((stage) => (
+                  <SelectItem key={stage.id} value={String(stage.id)}>
+                    {stage.name || 'Unnamed Stage'}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

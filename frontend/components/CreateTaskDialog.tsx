@@ -76,9 +76,10 @@ export function CreateTaskDialog({
     },
   });
 
-  const safePeople = peopleData?.people || [];
-  const safeDeals = dealsData?.deals || [];
-  const safeUsers = usersData?.users || [];
+  // Defensive defaults - always use arrays
+  const safePeople = (peopleData?.people ?? []).filter(p => p && p.id);
+  const safeDeals = (dealsData?.deals ?? []).filter(d => d && d.id);
+  const safeUsers = (usersData?.users ?? []).filter(u => u && u.id);
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -188,12 +189,10 @@ export function CreateTaskDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="unassigned">Unassigned</SelectItem>
-                {safeUsers
-                  .filter(u => u.id)
-                  .map((user) => (
-                    <SelectItem key={user.id} value={String(user.id)}>
-                      {user.firstName || 'Unnamed'} {user.lastName || ''}
-                    </SelectItem>
+                {safeUsers.map((user) => (
+                  <SelectItem key={user.id} value={String(user.id)}>
+                    {user.firstName || 'Unnamed'} {user.lastName || ''}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -213,12 +212,10 @@ export function CreateTaskDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="no-contact">No contact</SelectItem>
-                {safePeople
-                  .filter(p => p.id)
-                  .map((person) => (
-                    <SelectItem key={person.id} value={String(person.id)}>
-                      {person.firstName || 'Unnamed'} {person.lastName || ''}
-                    </SelectItem>
+                {safePeople.map((person) => (
+                  <SelectItem key={person.id} value={String(person.id)}>
+                    {person.firstName || 'Unnamed'} {person.lastName || ''}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -238,12 +235,10 @@ export function CreateTaskDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="no-deal">No deal</SelectItem>
-                {safeDeals
-                  .filter(d => d.id)
-                  .map((deal) => (
-                    <SelectItem key={deal.id} value={String(deal.id)}>
-                      {deal.title || 'Untitled Deal'}
-                    </SelectItem>
+                {safeDeals.map((deal) => (
+                  <SelectItem key={deal.id} value={String(deal.id)}>
+                    {deal.title || 'Untitled Deal'}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

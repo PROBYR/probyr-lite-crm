@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Plus, DollarSign, Calendar, User } from 'lucide-react';
+import { Plus, DollarSign, Calendar, User, AlertCircle } from 'lucide-react';
 import backend from '~backend/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/use-toast';
 import { CreateDealDialog } from '@/components/CreateDealDialog';
 
 export function Pipeline() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -18,15 +20,12 @@ export function Pipeline() {
     queryKey: ['stages'],
     queryFn: async () => {
       try {
-        return await backend.stages.listStages({});
+        const result = await backend.stages.listStages({});
+        return result;
       } catch (error) {
         console.error('Failed to fetch stages:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load pipeline stages. Please try again.",
-          variant: "destructive",
-        });
-        throw error;
+        setErrorMessage('Failed to load pipeline stages. Please try again.');
+        return { stages: [] };
       }
     },
   });
@@ -35,15 +34,13 @@ export function Pipeline() {
     queryKey: ['deals'],
     queryFn: async () => {
       try {
-        return await backend.deals.listDeals({});
+        const result = await backend.deals.listDeals({});
+        setErrorMessage(null); // Clear any previous error
+        return result;
       } catch (error) {
         console.error('Failed to fetch deals:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load deals. Please try again.",
-          variant: "destructive",
-        });
-        throw error;
+        setErrorMessage('Failed to load deals. Please try again.');
+        return { deals: [], total: 0 };
       }
     },
   });
@@ -89,7 +86,7 @@ export function Pipeline() {
   };
 
   const formatCurrency = (value?: number) => {
-    if (!value) return '';
+    if (typeof value !== 'number' || isNaN(value)) return '';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -102,12 +99,19 @@ export function Pipeline() {
     return new Date(date).toLocaleDateString();
   };
 
+  // Defensive array access - always use safe defaults
+  const safeStages = (stages?.stages ?? []).filter(s => s && s.id);
+  const safeDeals = (deals?.deals ?? []).filter(d => d && d.id);
+
   const getDealsByStage = (stageId: number) => {
-    return deals?.deals.filter(deal => deal.stageId === stageId) || [];
+    return safeDeals.filter(deal => deal.stageId === stageId);
   };
 
   const getTotalValueByStage = (stageId: number) => {
-    return getDealsByStage(stageId).reduce((sum, deal) => sum + (deal.value || 0), 0);
+    return getDealsByStage(stageId).reduce((sum, deal) => {
+      const value = typeof deal.value === 'number' ? deal.value : 0;
+      return sum + value;
+    }, 0);
   };
 
   if (stagesLoading || dealsLoading) {
@@ -143,16 +147,35 @@ export function Pipeline() {
         </Button>
       </div>
 
+      {errorMessage && (
+        <Alert className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {errorMessage}
+            <Button 
+              variant="link" 
+              className="p-0 ml-2 h-auto" 
+              onClick={() => {
+                setErrorMessage(null);
+                refetchDeals();
+              }}
+            >
+              Try again
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 overflow-x-auto">
-          {stages?.stages.map((stage) => {
+          {safeStages.map((stage) => {
             const stageDeals = getDealsByStage(stage.id);
             const totalValue = getTotalValueByStage(stage.id);
 
             return (
               <div key={stage.id} className="min-w-80 lg:min-w-0">
                 <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <h3 className="font-semibold text-gray-900">{stage.name}</h3>
+                  <h3 className="font-semibold text-gray-900">{stage.name || 'Unnamed Stage'}</h3>
                   <div className="flex items-center justify-between mt-2 text-sm text-gray-600">
                     <span>{stageDeals.length} deals</span>
                     {totalValue > 0 && (
@@ -187,18 +210,18 @@ export function Pipeline() {
                             >
                               <CardContent className="p-4">
                                 <h4 className="font-medium text-gray-900 mb-2">
-                                  {deal.title}
+                                  {deal.title || 'Untitled Deal'}
                                 </h4>
                                 
                                 {deal.person && (
                                   <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                                     <User className="w-4 h-4" />
-                                    <span>{deal.person.firstName} {deal.person.lastName}</span>
+                                    <span>{deal.person.firstName || ''} {deal.person.lastName || ''}</span>
                                   </div>
                                 )}
                                 
                                 <div className="flex items-center justify-between text-sm">
-                                  {deal.value && (
+                                  {typeof deal.value === 'number' && deal.value > 0 && (
                                     <div className="flex items-center gap-1 text-green-600 font-medium">
                                       <DollarSign className="w-4 h-4" />
                                       {formatCurrency(deal.value)}
@@ -215,7 +238,7 @@ export function Pipeline() {
                                 
                                 <div className="mt-2">
                                   <Badge variant="outline" className="text-xs">
-                                    {deal.probability}% chance
+                                    {deal.probability || 0}% chance
                                   </Badge>
                                 </div>
                               </CardContent>

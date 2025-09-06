@@ -57,8 +57,9 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated }: Crea
     },
   });
 
-  const safeCompanies = companiesData?.companies || [];
-  const safeTags = tagsData?.tags || [];
+  // Defensive defaults - always use arrays
+  const safeCompanies = (companiesData?.companies ?? []).filter(c => c && c.id && c.name);
+  const safeTags = (tagsData?.tags ?? []).filter(t => t && t.id && t.name);
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData & { tagIds: number[] }) => {
@@ -189,12 +190,10 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated }: Crea
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="no-company">No company</SelectItem>
-                {safeCompanies
-                  .filter(c => c.id)
-                  .map((company) => (
-                    <SelectItem key={company.id} value={String(company.id)}>
-                      {company.name || 'Unnamed Company'}
-                    </SelectItem>
+                {safeCompanies.map((company) => (
+                  <SelectItem key={company.id} value={String(company.id)}>
+                    {company.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
