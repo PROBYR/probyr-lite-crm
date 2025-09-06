@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings as SettingsIcon, Mail, Users, Tag, Download, Plus, Trash, Edit } from 'lucide-react';
+import { Settings as SettingsIcon, Mail, Users, Tag, Download, Plus, Trash, Edit, BarChart3 } from 'lucide-react';
 import backend from '~backend/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -110,11 +110,12 @@ export function Settings() {
       </div>
 
       <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="tags">Tags</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
@@ -216,18 +217,6 @@ export function Settings() {
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Mail className="w-5 h-5" />BCC Email Integration</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="bcc-email">Your BCC Email Address</Label>
-                <Input id="bcc-email" value={company?.bccEmail || ''} disabled className="font-mono" />
-                <p className="text-sm text-gray-600 mt-2">Add this email address as BCC in your email client to automatically log emails to contact timelines.</p>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="pipeline" className="space-y-6">
@@ -272,6 +261,18 @@ export function Settings() {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="integrations" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Mail className="w-5 h-5" />Company Email Settings</CardTitle>
+              <p className="text-gray-600">Configure SMTP/IMAP for your company-wide email address (e.g., sales@yourcompany.com).</p>
+            </CardHeader>
+            <CardContent>
+              <p className="text-center text-gray-500 py-8">Email integration settings will be available here.</p>
             </CardContent>
           </Card>
         </TabsContent>

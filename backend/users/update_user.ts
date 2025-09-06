@@ -8,6 +8,7 @@ export interface UpdateUserParams {
 export interface UpdateUserRequest {
   firstName?: string;
   lastName?: string;
+  email?: string;
   role?: 'admin' | 'member';
   isActive?: boolean;
 }
@@ -40,6 +41,7 @@ export const updateUser = api<UpdateUserParams & UpdateUserRequest, User>(
 
     const updatedFirstName = req.firstName ?? user.firstName;
     const updatedLastName = req.lastName ?? user.lastName;
+    const updatedEmail = req.email ?? user.email;
     const updatedRole = req.role ?? user.role;
     const updatedIsActive = req.isActive ?? user.isActive;
 
@@ -47,6 +49,7 @@ export const updateUser = api<UpdateUserParams & UpdateUserRequest, User>(
       UPDATE users
       SET first_name = ${updatedFirstName},
           last_name = ${updatedLastName},
+          email = ${updatedEmail},
           role = ${updatedRole},
           is_active = ${updatedIsActive},
           updated_at = NOW()

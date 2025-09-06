@@ -26,6 +26,7 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    email: '',
     role: 'member' as 'admin' | 'member',
   });
   const { toast } = useToast();
@@ -35,6 +36,7 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
       setFormData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
+        email: user.email || '',
         role: user.role,
       });
     }
@@ -64,10 +66,10 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.firstName) {
+    if (!formData.firstName || !formData.email) {
       toast({
         title: "Error",
-        description: "First Name is required.",
+        description: "First Name and Email are required.",
         variant: "destructive",
       });
       return;
@@ -106,12 +108,12 @@ export function EditUserDialog({ user, open, onOpenChange, onUserUpdated }: Edit
             </div>
           </div>
           <div>
-            <Label htmlFor="edit-email">Email</Label>
+            <Label htmlFor="edit-email">Email *</Label>
             <Input
               id="edit-email"
               type="email"
-              value={user.email}
-              disabled
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
             />
           </div>
           <div>
