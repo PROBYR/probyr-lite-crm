@@ -57,9 +57,14 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated }: Crea
     },
   });
 
-  // Defensive defaults - always use arrays
-  const safeCompanies = (companiesData?.companies ?? []).filter(c => c && c.id && c.name);
-  const safeTags = (tagsData?.tags ?? []).filter(t => t && t.id && t.name);
+  // Defensive defaults - always use arrays and ensure they exist
+  const safeCompanies = Array.isArray(companiesData?.companies) 
+    ? companiesData.companies.filter(c => c && c.id && c.name) 
+    : [];
+  
+  const safeTags = Array.isArray(tagsData?.tags) 
+    ? tagsData.tags.filter(t => t && t.id && t.name) 
+    : [];
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData & { tagIds: number[] }) => {

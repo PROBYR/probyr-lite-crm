@@ -37,7 +37,10 @@ export class Client {
     public readonly company: company.ServiceClient
     public readonly deals: deals.ServiceClient
     public readonly imports: imports.ServiceClient
+    public readonly integrations: integrations.ServiceClient
+    public readonly outreach: outreach.ServiceClient
     public readonly people: people.ServiceClient
+    public readonly pipelines: pipelines.ServiceClient
     public readonly stages: stages.ServiceClient
     public readonly tags: tags.ServiceClient
     public readonly tasks: tasks.ServiceClient
@@ -61,7 +64,10 @@ export class Client {
         this.company = new company.ServiceClient(base)
         this.deals = new deals.ServiceClient(base)
         this.imports = new imports.ServiceClient(base)
+        this.integrations = new integrations.ServiceClient(base)
+        this.outreach = new outreach.ServiceClient(base)
         this.people = new people.ServiceClient(base)
+        this.pipelines = new pipelines.ServiceClient(base)
         this.stages = new stages.ServiceClient(base)
         this.tags = new tags.ServiceClient(base)
         this.tasks = new tasks.ServiceClient(base)
@@ -271,6 +277,78 @@ export namespace imports {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
+import { getEmailSettings as api_integrations_get_email_settings_getEmailSettings } from "~backend/integrations/get_email_settings";
+import { updateEmailSettings as api_integrations_update_email_settings_updateEmailSettings } from "~backend/integrations/update_email_settings";
+
+export namespace integrations {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.getEmailSettings = this.getEmailSettings.bind(this)
+            this.updateEmailSettings = this.updateEmailSettings.bind(this)
+        }
+
+        /**
+         * Retrieves company email settings.
+         */
+        public async getEmailSettings(): Promise<ResponseType<typeof api_integrations_get_email_settings_getEmailSettings>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/integrations/email`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_integrations_get_email_settings_getEmailSettings>
+        }
+
+        /**
+         * Updates company email settings.
+         */
+        public async updateEmailSettings(params: RequestType<typeof api_integrations_update_email_settings_updateEmailSettings>): Promise<void> {
+            await this.baseClient.callTypedAPI(`/integrations/email`, {method: "POST", body: JSON.stringify(params)})
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { bookMeeting as api_outreach_book_meeting_bookMeeting } from "~backend/outreach/book_meeting";
+import { sendEmail as api_outreach_send_email_sendEmail } from "~backend/outreach/send_email";
+
+export namespace outreach {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.bookMeeting = this.bookMeeting.bind(this)
+            this.sendEmail = this.sendEmail.bind(this)
+        }
+
+        /**
+         * Books a meeting and logs it as an activity.
+         */
+        public async bookMeeting(params: RequestType<typeof api_outreach_book_meeting_bookMeeting>): Promise<ResponseType<typeof api_outreach_book_meeting_bookMeeting>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/outreach/meetings`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_outreach_book_meeting_bookMeeting>
+        }
+
+        /**
+         * Sends a one-to-one sales email and logs it as an activity.
+         */
+        public async sendEmail(params: RequestType<typeof api_outreach_send_email_sendEmail>): Promise<ResponseType<typeof api_outreach_send_email_sendEmail>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/outreach/emails`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_outreach_send_email_sendEmail>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
 import { createPerson as api_people_create_person_createPerson } from "~backend/people/create_person";
 import { deletePerson as api_people_delete_person_deletePerson } from "~backend/people/delete_person";
 import { getPerson as api_people_get_person_getPerson } from "~backend/people/get_person";
@@ -346,12 +424,61 @@ export namespace people {
                 jobTitle:  params.jobTitle,
                 lastName:  params.lastName,
                 phone:     params.phone,
+                status:    params.status,
                 tagIds:    params.tagIds,
             }
 
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/people/${encodeURIComponent(params.id)}`, {method: "PUT", body: JSON.stringify(body)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_people_update_person_updatePerson>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { create as api_pipelines_create_create } from "~backend/pipelines/create";
+import { get as api_pipelines_get_get } from "~backend/pipelines/get";
+import { list as api_pipelines_list_list } from "~backend/pipelines/list";
+
+export namespace pipelines {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.create = this.create.bind(this)
+            this.get = this.get.bind(this)
+            this.list = this.list.bind(this)
+        }
+
+        /**
+         * Creates a new pipeline.
+         */
+        public async create(params: RequestType<typeof api_pipelines_create_create>): Promise<ResponseType<typeof api_pipelines_create_create>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/pipelines`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pipelines_create_create>
+        }
+
+        /**
+         * Retrieves detailed information about a single pipeline, including stages and deals.
+         */
+        public async get(params: { id: number }): Promise<ResponseType<typeof api_pipelines_get_get>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/pipelines/${encodeURIComponent(params.id)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pipelines_get_get>
+        }
+
+        /**
+         * Lists all pipelines for a company.
+         */
+        public async list(): Promise<ResponseType<typeof api_pipelines_list_list>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/pipelines`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_pipelines_list_list>
         }
     }
 }
@@ -377,7 +504,8 @@ export namespace stages {
         public async listStages(params: RequestType<typeof api_stages_list_stages_listStages>): Promise<ResponseType<typeof api_stages_list_stages_listStages>> {
             // Convert our params into the objects we need for the request
             const query = makeRecord<string, string | string[]>({
-                companyId: params.companyId === undefined ? undefined : String(params.companyId),
+                companyId:  params.companyId === undefined ? undefined : String(params.companyId),
+                pipelineId: params.pipelineId === undefined ? undefined : String(params.pipelineId),
             })
 
             // Now make the actual call to the API
@@ -501,7 +629,10 @@ export namespace tasks {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
+import { deleteUsers as api_users_delete_users_deleteUsers } from "~backend/users/delete_users";
+import { inviteUser as api_users_invite_inviteUser } from "~backend/users/invite";
 import { listUsers as api_users_list_users_listUsers } from "~backend/users/list_users";
+import { updateUser as api_users_update_user_updateUser } from "~backend/users/update_user";
 
 export namespace users {
 
@@ -510,16 +641,53 @@ export namespace users {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
+            this.deleteUsers = this.deleteUsers.bind(this)
+            this.inviteUser = this.inviteUser.bind(this)
             this.listUsers = this.listUsers.bind(this)
+            this.updateUser = this.updateUser.bind(this)
         }
 
         /**
-         * Retrieves all active users.
+         * Deletes one or more users.
+         */
+        public async deleteUsers(params: RequestType<typeof api_users_delete_users_deleteUsers>): Promise<void> {
+            await this.baseClient.callTypedAPI(`/users/delete`, {method: "POST", body: JSON.stringify(params)})
+        }
+
+        /**
+         * Invites a new user to a company.
+         */
+        public async inviteUser(params: RequestType<typeof api_users_invite_inviteUser>): Promise<ResponseType<typeof api_users_invite_inviteUser>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/users/invite`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_users_invite_inviteUser>
+        }
+
+        /**
+         * Retrieves all users for a company.
          */
         public async listUsers(): Promise<ResponseType<typeof api_users_list_users_listUsers>> {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/users`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_users_list_users_listUsers>
+        }
+
+        /**
+         * Updates an existing user.
+         */
+        public async updateUser(params: RequestType<typeof api_users_update_user_updateUser>): Promise<ResponseType<typeof api_users_update_user_updateUser>> {
+            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
+            const body: Record<string, any> = {
+                email:     params.email,
+                firstName: params.firstName,
+                isActive:  params.isActive,
+                lastName:  params.lastName,
+                role:      params.role,
+            }
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/users/${encodeURIComponent(params.id)}`, {method: "PUT", body: JSON.stringify(body)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_users_update_user_updateUser>
         }
     }
 }
