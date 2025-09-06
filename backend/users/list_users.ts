@@ -20,21 +20,26 @@ export const listUsers = api<void, ListUsersResponse>({
   method: "GET",
   path: "/users"
 }, async () => {
-  const rows = await crmDB.queryAll<any>`
-    SELECT id, company_id, email, first_name, last_name, role 
-    FROM users 
-    WHERE is_active = TRUE 
-    ORDER BY first_name, last_name
-  `;
-  
-  const users: User[] = rows.map(row => ({
-    id: row.id,
-    companyId: row.company_id,
-    email: row.email,
-    firstName: row.first_name,
-    lastName: row.last_name || undefined,
-    role: row.role,
-  }));
+  try {
+    const rows = await crmDB.queryAll<any>`
+      SELECT id, company_id, email, first_name, last_name, role 
+      FROM users 
+      WHERE is_active = TRUE 
+      ORDER BY first_name, last_name
+    `;
+    
+    const users: User[] = rows.map(row => ({
+      id: row.id,
+      companyId: row.company_id,
+      email: row.email || '',
+      firstName: row.first_name || '',
+      lastName: row.last_name || undefined,
+      role: row.role,
+    }));
 
-  return { users };
+    return { users };
+  } catch (error) {
+    console.error('Error in listUsers:', error);
+    return { users: [] };
+  }
 });

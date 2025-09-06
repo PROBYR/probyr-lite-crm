@@ -22,28 +22,33 @@ export interface ListTagsResponse {
 export const listTags = api<ListTagsParams, ListTagsResponse>(
   { expose: true, method: "GET", path: "/tags" },
   async (params) => {
-    const companyId = params.companyId || 1; // Default to demo company
+    try {
+      const companyId = params.companyId || 1; // Default to demo company
 
-    const rows = await crmDB.queryAll<{
-      id: number;
-      company_id: number;
-      name: string;
-      color: string;
-      created_at: Date;
-    }>`
-      SELECT * FROM tags 
-      WHERE company_id = ${companyId}
-      ORDER BY name
-    `;
+      const rows = await crmDB.queryAll<{
+        id: number;
+        company_id: number;
+        name: string;
+        color: string;
+        created_at: Date;
+      }>`
+        SELECT * FROM tags 
+        WHERE company_id = ${companyId}
+        ORDER BY name
+      `;
 
-    const tags: Tag[] = rows.map(row => ({
-      id: row.id,
-      companyId: row.company_id,
-      name: row.name,
-      color: row.color,
-      createdAt: row.created_at,
-    }));
+      const tags: Tag[] = rows.map(row => ({
+        id: row.id,
+        companyId: row.company_id,
+        name: row.name || '',
+        color: row.color || '#3B82F6',
+        createdAt: row.created_at,
+      }));
 
-    return { tags };
+      return { tags };
+    } catch (error) {
+      console.error('Error in listTags:', error);
+      return { tags: [] };
+    }
   }
 );
