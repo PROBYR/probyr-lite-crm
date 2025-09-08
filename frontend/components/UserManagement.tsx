@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Plus, Edit, UserX, Shield, User } from 'lucide-react';
+import { Users, Plus, Edit, UserX, Shield, User, MoreVertical } from 'lucide-react';
 import backend from '~backend/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/components/ui/use-toast';
 import { InviteUserDialog } from '@/components/InviteUserDialog';
@@ -16,6 +17,8 @@ export function UserManagement() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+  const [userToEdit, setUserToEdit] = useState<any>(null);
+  const [userToDeactivate, setUserToDeactivate] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -37,10 +40,6 @@ export function UserManagement() {
   });
 
   const users = useMemo(() => usersData?.users || [], [usersData]);
-  const userToEdit = useMemo(() => {
-    if (selectedUserIds.length !== 1) return null;
-    return users.find(u => u.id === selectedUserIds[0]) || null;
-  }, [selectedUserIds, users]);
 
   const deactivateMutation = useMutation({
     mutationFn: (userIds: number[]) => backend.users.deactivateUsers({ userIds }),
@@ -58,6 +57,7 @@ export function UserManagement() {
       }
       refetchUsers();
       setSelectedUserIds([]);
+      setUserToDeactivate(null);
     },
     onError: (error) => {
       console.error("Failed to deactivate users:", error);
@@ -66,6 +66,7 @@ export function UserManagement() {
         description: "Could not deactivate users. Please try again.", 
         variant: "destructive" 
       });
+      setUserToDeactivate(null);
     },
   });
 
@@ -95,7 +96,23 @@ export function UserManagement() {
   const handleUserUpdated = () => {
     refetchUsers();
     setShowEditDialog(false);
+    setUserToEdit(null);
     toast({ title: "Success", description: "User updated successfully!" });
+  };
+
+  const handleEditUser = (user: any) => {
+    setUserToEdit(user);
+    setShowEditDialog(true);
+  };
+
+  const handleDeactivateUser = (user: any) => {
+    setUserToDeactivate(user);
+  };
+
+  const confirmDeactivateUser = () => {
+    if (userToDeactivate) {
+      deactivateMutation.mutate([userToDeactivate.id]);
+    }
   };
 
   const handleDeactivateSelected = () => {
@@ -200,15 +217,6 @@ export function UserManagement() {
           <div className="flex gap-2">
             {selectedUserIds.length > 0 && (
               <>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowEditDialog(true)} 
-                  disabled={selectedUserIds.length !== 1}
-                >
-                  <Edit className="w-4 h-4 mr-2" /> 
-                  Edit
-                </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button 
@@ -288,6 +296,7 @@ export function UserManagement() {
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Joined</TableHead>
+              <TableHead className="w-12">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -312,13 +321,39 @@ export function UserManagement() {
                   <TableCell>{getRoleBadge(user.role)}</TableCell>
                   <TableCell>{getStatusBadge(user.isActive)}</TableCell>
                   <TableCell>
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    {user.id !== 1 && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit User
+                          </DropdownMenuItem>
+                          {user.isActive && (
+                            <DropdownMenuItem 
+                              onClick={() => handleDeactivateUser(user)}
+                              className="text-orange-600"
+                            >
+                              <UserX className="w-4 h-4 mr-2" />
+                              Deactivate User
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
+                <TableCell colSpan={7} className="h-24 text-center">
                   No users found.
                 </TableCell>
               </TableRow>
@@ -338,6 +373,27 @@ export function UserManagement() {
         onOpenChange={setShowEditDialog} 
         onUserUpdated={handleUserUpdated} 
       />
+      
+      {/* Single User Deactivation Dialog */}
+      <AlertDialog open={!!userToDeactivate} onOpenChange={(open) => !open && setUserToDeactivate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to deactivate {userToDeactivate?.firstName} {userToDeactivate?.lastName}? 
+              Their access will be revoked immediately, but their data will be preserved for historical records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setUserToDeactivate(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeactivateUser}>
+              Deactivate User
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
