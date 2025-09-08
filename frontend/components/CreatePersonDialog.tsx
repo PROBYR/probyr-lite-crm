@@ -145,10 +145,10 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated, defaul
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md" aria-describedby="create-person-dialog-desc">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Contact</DialogTitle>
-            <DialogDescription id="create-person-dialog-desc">
+            <DialogDescription>
               Add a new contact to your CRM. Fill in their details below.
             </DialogDescription>
           </DialogHeader>
@@ -207,7 +207,7 @@ export function CreatePersonDialog({ open, onOpenChange, onPersonCreated, defaul
                 <Label htmlFor="company">Company</Label>
                 <div className="space-y-2">
                   <Select 
-                    value={formData.companyId?.toString()} 
+                    value={formData.companyId?.toString() || ''} 
                     onValueChange={(value) => {
                       if (value === 'create-new') {
                         setShowCreateCompanyDialog(true);

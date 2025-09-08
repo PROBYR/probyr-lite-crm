@@ -81,10 +81,10 @@ export function CreateCompanyDialog({ open, onOpenChange, onCompanyCreated }: Cr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" aria-describedby="create-company-dialog-desc">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Company</DialogTitle>
-          <DialogDescription id="create-company-dialog-desc">
+          <DialogDescription>
             Add a new company to your CRM. Fill in the company details below.
           </DialogDescription>
         </DialogHeader>
