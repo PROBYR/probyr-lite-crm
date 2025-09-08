@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Plus, AlertCircle, BarChart2, LayoutGrid, List } from 'lucide-react';
+import { Plus, AlertCircle, BarChart2, LayoutGrid, List, Settings } from 'lucide-react';
 import backend from '~backend/client';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/use-toast';
 import { CreateDealDialog } from '@/components/CreateDealDialog';
+import { CreatePipelineDialog } from '@/components/CreatePipelineDialog';
+import { EditPipelineDialog } from '@/components/EditPipelineDialog';
 import { StageColumn } from '@/components/StageColumn';
 import { DealCard } from '@/components/DealCard';
 import { DealsTableView } from '@/components/DealsTableView';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'kanban' | 'table';
 
 export function Pipeline() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showCreatePipelineDialog, setShowCreatePipelineDialog] = useState(false);
+  const [showEditPipelineDialog, setShowEditPipelineDialog] = useState(false);
+  const [editingPipelineId, setEditingPipelineId] = useState<number | null>(null);
   const [selectedPipelineId, setSelectedPipelineId] = useState<number>(1);
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [tableSortBy, setTableSortBy] = useState('created_at');
@@ -38,25 +44,61 @@ export function Pipeline() {
     localStorage.setItem('pipeline-view-mode', mode);
   };
 
-  const { data: pipelinesData, isLoading: pipelinesLoading } = useQuery({
+  const { data: pipelinesData, isLoading: pipelinesLoading, refetch: refetchPipelines } = useQuery({
     queryKey: ['pipelines'],
-    queryFn: () => backend.pipelines.list(),
+    queryFn: async () => {
+      try {
+        return await backend.pipelines.list();
+      } catch (error) {
+        console.error('Failed to fetch pipelines:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load pipelines. Please try again.",
+          variant: "destructive",
+        });
+        return { pipelines: [] };
+      }
+    },
   });
 
   const { data: pipelineDetails, isLoading: pipelineDetailsLoading } = useQuery({
     queryKey: ['pipeline', selectedPipelineId],
-    queryFn: () => backend.pipelines.get({ id: selectedPipelineId }),
+    queryFn: async () => {
+      try {
+        return await backend.pipelines.get({ id: selectedPipelineId });
+      } catch (error) {
+        console.error('Failed to fetch pipeline details:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load pipeline details. Please try again.",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
     enabled: !!selectedPipelineId && viewMode === 'kanban',
   });
 
   const { data: tableDeals, isLoading: tableDealsLoading } = useQuery({
     queryKey: ['deals-table', selectedPipelineId, tableSortBy, tableSortOrder],
-    queryFn: () => backend.deals.listDealsTable({ 
-      pipelineId: selectedPipelineId,
-      sortBy: tableSortBy,
-      sortOrder: tableSortOrder,
-      limit: 1000,
-    }),
+    queryFn: async () => {
+      try {
+        return await backend.deals.listDealsTable({ 
+          pipelineId: selectedPipelineId,
+          sortBy: tableSortBy,
+          sortOrder: tableSortOrder,
+          limit: 1000,
+        });
+      } catch (error) {
+        console.error('Failed to fetch table deals:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load deals. Please try again.",
+          variant: "destructive",
+        });
+        return { deals: [], total: 0 };
+      }
+    },
     enabled: !!selectedPipelineId && viewMode === 'table',
   });
 
@@ -75,6 +117,28 @@ export function Pipeline() {
     },
   });
 
+  const deletePipelineMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await backend.pipelines.deletePipeline({ id });
+    },
+    onSuccess: () => {
+      refetchPipelines();
+      toast({
+        title: "Success",
+        description: "Pipeline deleted successfully!",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Failed to delete pipeline:', error);
+      const errorMessage = error?.message || "Failed to delete pipeline. Please try again.";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     const dealId = parseInt(result.draggableId);
@@ -87,6 +151,35 @@ export function Pipeline() {
     queryClient.invalidateQueries({ queryKey: ['deals-table', selectedPipelineId] });
     setShowCreateDialog(false);
     toast({ title: "Success", description: "Deal created successfully!" });
+  };
+
+  const handlePipelineCreated = () => {
+    refetchPipelines();
+    setShowCreatePipelineDialog(false);
+    toast({
+      title: "Success",
+      description: "Pipeline created successfully!",
+    });
+  };
+
+  const handlePipelineUpdated = () => {
+    refetchPipelines();
+    queryClient.invalidateQueries({ queryKey: ['pipeline'] });
+    setShowEditPipelineDialog(false);
+    setEditingPipelineId(null);
+    toast({
+      title: "Success",
+      description: "Pipeline updated successfully!",
+    });
+  };
+
+  const handleEditPipeline = (id: number) => {
+    setEditingPipelineId(id);
+    setShowEditPipelineDialog(true);
+  };
+
+  const handleDeletePipeline = (id: number) => {
+    deletePipelineMutation.mutate(id);
   };
 
   const handleTableSort = (column: string) => {
@@ -109,6 +202,7 @@ export function Pipeline() {
   }, [pipelinesData, selectedPipelineId]);
 
   const isLoading = pipelinesLoading || (viewMode === 'kanban' ? pipelineDetailsLoading : tableDealsLoading);
+  const pipelines = pipelinesData?.pipelines || [];
 
   return (
     <div className="p-4 lg:p-8">
@@ -116,18 +210,39 @@ export function Pipeline() {
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-gray-900">Sales Pipeline</h1>
           
-          {/* Pipeline Selector - only show if multiple pipelines */}
-          {pipelinesData && pipelinesData.pipelines.length > 1 && (
-            <Select value={String(selectedPipelineId)} onValueChange={(v) => setSelectedPipelineId(Number(v))}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {pipelinesData.pipelines.map(p => (
-                  <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Pipeline Selector */}
+          {pipelines.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Select value={String(selectedPipelineId)} onValueChange={(v) => setSelectedPipelineId(Number(v))}>
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {pipelines.map(p => (
+                    <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Pipeline Management Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setShowCreatePipelineDialog(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Pipeline
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleEditPipeline(selectedPipelineId)}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Edit Pipeline
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )}
 
           {/* View Mode Selector */}
@@ -153,14 +268,35 @@ export function Pipeline() {
           </div>
         </div>
         
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Deal
-        </Button>
+        <div className="flex gap-2 mt-4 lg:mt-0">
+          {pipelines.length === 0 && (
+            <Button variant="outline" onClick={() => setShowCreatePipelineDialog(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Pipeline
+            </Button>
+          )}
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Deal
+          </Button>
+        </div>
       </div>
 
+      {/* No Pipelines State */}
+      {pipelines.length === 0 && !pipelinesLoading && (
+        <div className="text-center py-12">
+          <BarChart2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No pipelines yet</h3>
+          <p className="text-gray-600 mb-4">Create your first sales pipeline to start tracking deals.</p>
+          <Button onClick={() => setShowCreatePipelineDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Create Pipeline
+          </Button>
+        </div>
+      )}
+
       {/* Pipeline Stats */}
-      {(pipelineDetails || tableDeals) && (
+      {pipelines.length > 0 && (pipelineDetails || tableDeals) && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <div className="p-4 bg-gray-50 rounded-lg">
             <h4 className="text-sm font-medium text-gray-500">Total Deals</h4>
@@ -213,7 +349,7 @@ export function Pipeline() {
             <div className="h-96 bg-gray-200 rounded"></div>
           )}
         </div>
-      ) : viewMode === 'kanban' ? (
+      ) : pipelines.length > 0 && viewMode === 'kanban' ? (
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 overflow-x-auto">
             {pipelineDetails?.stages.map((stage) => (
@@ -231,7 +367,7 @@ export function Pipeline() {
             ))}
           </div>
         </DragDropContext>
-      ) : (
+      ) : pipelines.length > 0 && viewMode === 'table' ? (
         <DealsTableView
           deals={tableDeals?.deals || []}
           isLoading={tableDealsLoading}
@@ -239,13 +375,26 @@ export function Pipeline() {
           sortOrder={tableSortOrder}
           onSort={handleTableSort}
         />
-      )}
+      ) : null}
 
       <CreateDealDialog 
         open={showCreateDialog} 
         onOpenChange={setShowCreateDialog} 
         onDealCreated={handleDealCreated} 
         defaultPipelineId={selectedPipelineId}
+      />
+
+      <CreatePipelineDialog
+        open={showCreatePipelineDialog}
+        onOpenChange={setShowCreatePipelineDialog}
+        onPipelineCreated={handlePipelineCreated}
+      />
+
+      <EditPipelineDialog
+        pipelineId={editingPipelineId}
+        open={showEditPipelineDialog}
+        onOpenChange={setShowEditPipelineDialog}
+        onPipelineUpdated={handlePipelineUpdated}
       />
     </div>
   );
