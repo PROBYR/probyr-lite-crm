@@ -1,3 +1,3 @@
 import { Service } from "encore.dev/service";
 
-export default new Service("leads");
+export default new Service("third_party");

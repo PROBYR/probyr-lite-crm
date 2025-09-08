@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/components/ui/use-toast';
 import { InviteUserDialog } from '@/components/InviteUserDialog';
 import { EditUserDialog } from '@/components/EditUserDialog';
-import { ApiKeyManagement } from '@/components/ApiKeyManagement';
+import { ApiKeyManagementAdvanced } from '@/components/ApiKeyManagementAdvanced';
 import { UserConnectionSettings } from '@/components/UserConnectionSettings';
 import { CompanyProfileForm } from '@/components/CompanyProfileForm';
 import { UserManagement } from '@/components/UserManagement';
@@ -128,7 +128,7 @@ export function Settings() {
         </TabsContent>
 
         <TabsContent value="api" className="space-y-6">
-          <ApiKeyManagement />
+          <ApiKeyManagementAdvanced />
         </TabsContent>
 
         <TabsContent value="pipeline" className="space-y-6">

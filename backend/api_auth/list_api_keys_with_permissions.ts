@@ -8,6 +8,7 @@ export interface ApiKey {
   name: string;
   description?: string;
   keyPrefix: string;
+  permissions: string[];
   isActive: boolean;
   createdAt: Date;
 }
@@ -20,9 +21,9 @@ export interface ListApiKeysResponse {
   apiKeys: ApiKey[];
 }
 
-// Retrieves all API keys for a company.
-export const listApiKeys = api<ListApiKeysParams, ListApiKeysResponse>(
-  { expose: true, method: "GET", path: "/api-keys" },
+// Retrieves all API keys with permissions for a company.
+export const listApiKeysWithPermissions = api<ListApiKeysParams, ListApiKeysResponse>(
+  { expose: true, method: "GET", path: "/api-keys/detailed" },
   async (params) => {
     try {
       const companyId = params.companyId || 1; // Default to demo company
@@ -33,10 +34,11 @@ export const listApiKeys = api<ListApiKeysParams, ListApiKeysResponse>(
         name: string;
         description: string | null;
         key_prefix: string;
+        permissions: string;
         is_active: boolean;
         created_at: Date;
       }>`
-        SELECT id, company_id, name, description, key_prefix, is_active, created_at
+        SELECT id, company_id, name, description, key_prefix, permissions, is_active, created_at
         FROM api_keys 
         WHERE company_id = ${companyId}
         ORDER BY created_at DESC
@@ -48,13 +50,14 @@ export const listApiKeys = api<ListApiKeysParams, ListApiKeysResponse>(
         name: row.name || '',
         description: row.description || undefined,
         keyPrefix: row.key_prefix || '',
+        permissions: JSON.parse(row.permissions || '[]'),
         isActive: row.is_active,
         createdAt: row.created_at,
       }));
 
       return { apiKeys };
     } catch (error) {
-      console.error('Error in listApiKeys:', error);
+      console.error('Error in listApiKeysWithPermissions:', error);
       return { apiKeys: [] };
     }
   }

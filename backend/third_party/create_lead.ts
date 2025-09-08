@@ -1,68 +1,77 @@
 import { api, APIError, Header } from "encore.dev/api";
 import { crmDB } from "./db";
+import { api_auth } from "~encore/clients";
 
-export interface CreateLeadFromSourceRequest {
-  sourceApplication: string;
-  sourceIdentifier?: string;
-  prospect: {
-    firstName: string;
-    lastName: string;
+export interface CreateLeadRequest {
+  contact: {
+    fullName: string;
     email: string;
-    phone?: string;
     title?: string;
-  };
-  company: {
-    name: string;
-    website?: string;
-    industry?: string;
+    companyName: string;
+    companyWebsite?: string;
   };
   deal: {
-    name: string;
+    dealName: string;
     value?: number;
-    pipelineStage: string;
+    pipelineName: string;
+    stageName: string;
   };
-  initialNote: string;
+  note: {
+    content: string;
+  };
 }
 
-export interface CreateLeadFromSourceParams {
+export interface CreateLeadParams {
   authorization: Header<"Authorization">;
 }
 
-export interface CreateLeadFromSourceResponse {
-  message: string;
+export interface CreateLeadResponse {
+  success: boolean;
   contactId: number;
   companyId: number;
   dealId: number;
+  message: string;
 }
 
-// Creates a lead from an external source like ProByr Outreach Pro.
-export const createFromSource = api<CreateLeadFromSourceParams & CreateLeadFromSourceRequest, CreateLeadFromSourceResponse>(
-  { expose: true, method: "POST", path: "/api/v1/leads/create-from-source" },
+// Creates a lead from third-party applications with proper permission validation.
+export const createLead = api<CreateLeadParams & CreateLeadRequest, CreateLeadResponse>(
+  { expose: true, method: "POST", path: "/api/v1/leads" },
   async (req) => {
     try {
-      // Validate API key
+      // Validate API key and check permissions
       if (!req.authorization || !req.authorization.startsWith('Bearer ')) {
         throw APIError.unauthenticated("API key required");
       }
 
       const apiKey = req.authorization.replace('Bearer ', '');
       
-      // In a real implementation, validate the API key properly
-      if (!apiKey.startsWith('pbr_')) {
-        throw APIError.unauthenticated("Invalid API key format");
+      const validation = await api_auth.validateApiKeyWithPermissions({
+        key: apiKey,
+      });
+
+      if (!validation.isValid) {
+        throw APIError.unauthenticated("Invalid API key");
       }
 
-      // For demo purposes, assume API key is valid and belongs to company 1
-      const companyId = 1;
+      if (!validation.permissions?.includes('leads:create')) {
+        throw APIError.permissionDenied("API key does not have leads:create permission");
+      }
+
+      const companyId = validation.companyId!;
 
       const tx = await crmDB.begin();
 
       try {
-        // Check for existing company by website or name
+        // Split full name into first and last name
+        const nameParts = req.contact.fullName.trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+        // Check for existing company by name or website
         let existingCompany = await tx.queryRow<{ id: number }>`
           SELECT id FROM companies 
-          WHERE company_id = ${companyId} 
-          AND (website = ${req.company.website || null} OR name = ${req.company.name})
+          WHERE name = ${req.contact.companyName}
+          ${req.contact.companyWebsite ? `OR website = ${req.contact.companyWebsite}` : ''}
           LIMIT 1
         `;
 
@@ -74,7 +83,7 @@ export const createFromSource = api<CreateLeadFromSourceParams & CreateLeadFromS
           // Create new company
           const newCompany = await tx.queryRow<{ id: number }>`
             INSERT INTO companies (name, website, created_at, updated_at)
-            VALUES (${req.company.name}, ${req.company.website || null}, NOW(), NOW())
+            VALUES (${req.contact.companyName}, ${req.contact.companyWebsite || null}, NOW(), NOW())
             RETURNING id
           `;
           
@@ -88,7 +97,7 @@ export const createFromSource = api<CreateLeadFromSourceParams & CreateLeadFromS
         // Check for existing contact by email
         let existingContact = await tx.queryRow<{ id: number }>`
           SELECT id FROM people 
-          WHERE email = ${req.prospect.email} AND company_id = ${companyId}
+          WHERE email = ${req.contact.email} AND company_id = ${targetCompanyId}
           LIMIT 1
         `;
 
@@ -101,10 +110,9 @@ export const createFromSource = api<CreateLeadFromSourceParams & CreateLeadFromS
           await tx.exec`
             UPDATE people 
             SET 
-              first_name = ${req.prospect.firstName},
-              last_name = ${req.prospect.lastName},
-              phone = ${req.prospect.phone || null},
-              job_title = ${req.prospect.title || null},
+              first_name = ${firstName},
+              last_name = ${lastName || null},
+              job_title = ${req.contact.title || null},
               company_id = ${targetCompanyId},
               updated_at = NOW()
             WHERE id = ${contactId}
@@ -113,12 +121,12 @@ export const createFromSource = api<CreateLeadFromSourceParams & CreateLeadFromS
           // Create new contact
           const newContact = await tx.queryRow<{ id: number }>`
             INSERT INTO people (
-              company_id, first_name, last_name, email, phone, job_title, 
+              company_id, first_name, last_name, email, job_title, 
               status, created_at, updated_at
             )
             VALUES (
-              ${targetCompanyId}, ${req.prospect.firstName}, ${req.prospect.lastName}, 
-              ${req.prospect.email}, ${req.prospect.phone || null}, ${req.prospect.title || null},
+              ${targetCompanyId}, ${firstName}, ${lastName || null}, 
+              ${req.contact.email}, ${req.contact.title || null},
               'New Lead', NOW(), NOW()
             )
             RETURNING id
@@ -131,15 +139,25 @@ export const createFromSource = api<CreateLeadFromSourceParams & CreateLeadFromS
           contactId = newContact.id;
         }
 
-        // Find the pipeline stage
+        // Find the pipeline and stage
+        const pipeline = await tx.queryRow<{ id: number }>`
+          SELECT id FROM pipelines 
+          WHERE company_id = ${companyId} AND name = ${req.deal.pipelineName}
+          LIMIT 1
+        `;
+
+        if (!pipeline) {
+          throw APIError.invalidArgument(`Pipeline '${req.deal.pipelineName}' not found`);
+        }
+
         const stage = await tx.queryRow<{ id: number }>`
           SELECT id FROM deal_stages 
-          WHERE company_id = ${companyId} AND name = ${req.deal.pipelineStage}
+          WHERE pipeline_id = ${pipeline.id} AND name = ${req.deal.stageName}
           LIMIT 1
         `;
 
         if (!stage) {
-          throw APIError.invalidArgument(`Pipeline stage '${req.deal.pipelineStage}' not found`);
+          throw APIError.invalidArgument(`Stage '${req.deal.stageName}' not found in pipeline '${req.deal.pipelineName}'`);
         }
 
         // Create new deal
@@ -149,7 +167,7 @@ export const createFromSource = api<CreateLeadFromSourceParams & CreateLeadFromS
             probability, created_at, updated_at
           )
           VALUES (
-            ${companyId}, ${contactId}, ${stage.id}, ${req.deal.name}, 
+            ${companyId}, ${contactId}, ${stage.id}, ${req.deal.dealName}, 
             ${req.deal.value || 0}, 50, NOW(), NOW()
           )
           RETURNING id
@@ -159,7 +177,7 @@ export const createFromSource = api<CreateLeadFromSourceParams & CreateLeadFromS
           throw new Error("Failed to create deal");
         }
 
-        // Add initial note to activity timeline
+        // Add note to activity timeline
         await tx.exec`
           INSERT INTO activities (
             company_id, person_id, deal_id, activity_type, title, description, 
@@ -167,10 +185,10 @@ export const createFromSource = api<CreateLeadFromSourceParams & CreateLeadFromS
           )
           VALUES (
             ${companyId}, ${contactId}, ${newDeal.id}, 'api_import', 
-            'Lead imported from ${req.sourceApplication}', ${req.initialNote},
+            'Lead imported via API', ${req.note.content},
             ${JSON.stringify({ 
-              sourceApplication: req.sourceApplication, 
-              sourceIdentifier: req.sourceIdentifier 
+              sourceApplication: 'Third Party API',
+              apiKeyName: validation.keyName 
             })},
             NOW()
           )
@@ -179,10 +197,11 @@ export const createFromSource = api<CreateLeadFromSourceParams & CreateLeadFromS
         await tx.commit();
 
         return {
-          message: "Lead processed successfully.",
+          success: true,
           contactId: contactId,
           companyId: targetCompanyId,
           dealId: newDeal.id,
+          message: "Lead created successfully.",
         };
 
       } catch (error) {
@@ -191,7 +210,7 @@ export const createFromSource = api<CreateLeadFromSourceParams & CreateLeadFromS
       }
 
     } catch (error) {
-      console.error('Error in createFromSource:', error);
+      console.error('Error in createLead:', error);
       throw error;
     }
   }

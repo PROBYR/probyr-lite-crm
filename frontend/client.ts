@@ -39,13 +39,13 @@ export class Client {
     public readonly deals: deals.ServiceClient
     public readonly imports: imports.ServiceClient
     public readonly integrations: integrations.ServiceClient
-    public readonly leads: leads.ServiceClient
     public readonly outreach: outreach.ServiceClient
     public readonly people: people.ServiceClient
     public readonly pipelines: pipelines.ServiceClient
     public readonly stages: stages.ServiceClient
     public readonly tags: tags.ServiceClient
     public readonly tasks: tasks.ServiceClient
+    public readonly third_party: third_party.ServiceClient
     public readonly tracking: tracking.ServiceClient
     public readonly user_connections: user_connections.ServiceClient
     public readonly users: users.ServiceClient
@@ -70,13 +70,13 @@ export class Client {
         this.deals = new deals.ServiceClient(base)
         this.imports = new imports.ServiceClient(base)
         this.integrations = new integrations.ServiceClient(base)
-        this.leads = new leads.ServiceClient(base)
         this.outreach = new outreach.ServiceClient(base)
         this.people = new people.ServiceClient(base)
         this.pipelines = new pipelines.ServiceClient(base)
         this.stages = new stages.ServiceClient(base)
         this.tags = new tags.ServiceClient(base)
         this.tasks = new tasks.ServiceClient(base)
+        this.third_party = new third_party.ServiceClient(base)
         this.tracking = new tracking.ServiceClient(base)
         this.user_connections = new user_connections.ServiceClient(base)
         this.users = new users.ServiceClient(base)
@@ -160,8 +160,8 @@ export namespace activities {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
-import { generateApiKey as api_api_auth_generate_api_key_generateApiKey } from "~backend/api_auth/generate_api_key";
-import { listApiKeys as api_api_auth_list_api_keys_listApiKeys } from "~backend/api_auth/list_api_keys";
+import { createApiKey as api_api_auth_create_api_key_createApiKey } from "~backend/api_auth/create_api_key";
+import { listApiKeysWithPermissions as api_api_auth_list_api_keys_with_permissions_listApiKeysWithPermissions } from "~backend/api_auth/list_api_keys_with_permissions";
 import { revokeApiKey as api_api_auth_revoke_api_key_revokeApiKey } from "~backend/api_auth/revoke_api_key";
 
 export namespace api_auth {
@@ -171,32 +171,32 @@ export namespace api_auth {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
-            this.generateApiKey = this.generateApiKey.bind(this)
-            this.listApiKeys = this.listApiKeys.bind(this)
+            this.createApiKey = this.createApiKey.bind(this)
+            this.listApiKeysWithPermissions = this.listApiKeysWithPermissions.bind(this)
             this.revokeApiKey = this.revokeApiKey.bind(this)
         }
 
         /**
-         * Generates a new API key for a company.
+         * Creates a new API key with specific permissions for a company.
          */
-        public async generateApiKey(params: RequestType<typeof api_api_auth_generate_api_key_generateApiKey>): Promise<ResponseType<typeof api_api_auth_generate_api_key_generateApiKey>> {
+        public async createApiKey(params: RequestType<typeof api_api_auth_create_api_key_createApiKey>): Promise<ResponseType<typeof api_api_auth_create_api_key_createApiKey>> {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/api-keys`, {method: "POST", body: JSON.stringify(params)})
-            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_api_auth_generate_api_key_generateApiKey>
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_api_auth_create_api_key_createApiKey>
         }
 
         /**
-         * Retrieves all API keys for a company.
+         * Retrieves all API keys with permissions for a company.
          */
-        public async listApiKeys(params: RequestType<typeof api_api_auth_list_api_keys_listApiKeys>): Promise<ResponseType<typeof api_api_auth_list_api_keys_listApiKeys>> {
+        public async listApiKeysWithPermissions(params: RequestType<typeof api_api_auth_list_api_keys_with_permissions_listApiKeysWithPermissions>): Promise<ResponseType<typeof api_api_auth_list_api_keys_with_permissions_listApiKeysWithPermissions>> {
             // Convert our params into the objects we need for the request
             const query = makeRecord<string, string | string[]>({
                 companyId: params.companyId === undefined ? undefined : String(params.companyId),
             })
 
             // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/api-keys`, {query, method: "GET", body: undefined})
-            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_api_auth_list_api_keys_listApiKeys>
+            const resp = await this.baseClient.callTypedAPI(`/api-keys/detailed`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_api_auth_list_api_keys_with_permissions_listApiKeysWithPermissions>
         }
 
         /**
@@ -436,47 +436,6 @@ export namespace integrations {
          */
         public async updateEmailSettings(params: RequestType<typeof api_integrations_update_email_settings_updateEmailSettings>): Promise<void> {
             await this.baseClient.callTypedAPI(`/integrations/email`, {method: "POST", body: JSON.stringify(params)})
-        }
-    }
-}
-
-/**
- * Import the endpoint handlers to derive the types for the client.
- */
-import { createFromSource as api_leads_create_from_source_createFromSource } from "~backend/leads/create_from_source";
-
-export namespace leads {
-
-    export class ServiceClient {
-        private baseClient: BaseClient
-
-        constructor(baseClient: BaseClient) {
-            this.baseClient = baseClient
-            this.createFromSource = this.createFromSource.bind(this)
-        }
-
-        /**
-         * Creates a lead from an external source like ProByr Outreach Pro.
-         */
-        public async createFromSource(params: RequestType<typeof api_leads_create_from_source_createFromSource>): Promise<ResponseType<typeof api_leads_create_from_source_createFromSource>> {
-            // Convert our params into the objects we need for the request
-            const headers = makeRecord<string, string>({
-                authorization: params.authorization,
-            })
-
-            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
-            const body: Record<string, any> = {
-                company:           params.company,
-                deal:              params.deal,
-                initialNote:       params.initialNote,
-                prospect:          params.prospect,
-                sourceApplication: params.sourceApplication,
-                sourceIdentifier:  params.sourceIdentifier,
-            }
-
-            // Now make the actual call to the API
-            const resp = await this.baseClient.callTypedAPI(`/api/v1/leads/create-from-source`, {headers, method: "POST", body: JSON.stringify(body)})
-            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_leads_create_from_source_createFromSource>
         }
     }
 }
@@ -898,6 +857,65 @@ export namespace tasks {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/tasks/${encodeURIComponent(params.id)}`, {method: "PUT", body: JSON.stringify(body)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_tasks_update_task_updateTask>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { createLead as api_third_party_create_lead_createLead } from "~backend/third_party/create_lead";
+import { getContacts as api_third_party_get_contacts_getContacts } from "~backend/third_party/get_contacts";
+
+export namespace third_party {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.createLead = this.createLead.bind(this)
+            this.getContacts = this.getContacts.bind(this)
+        }
+
+        /**
+         * Creates a lead from third-party applications with proper permission validation.
+         */
+        public async createLead(params: RequestType<typeof api_third_party_create_lead_createLead>): Promise<ResponseType<typeof api_third_party_create_lead_createLead>> {
+            // Convert our params into the objects we need for the request
+            const headers = makeRecord<string, string>({
+                authorization: params.authorization,
+            })
+
+            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
+            const body: Record<string, any> = {
+                contact: params.contact,
+                deal:    params.deal,
+                note:    params.note,
+            }
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/api/v1/leads`, {headers, method: "POST", body: JSON.stringify(body)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_third_party_create_lead_createLead>
+        }
+
+        /**
+         * Retrieves contacts for third-party applications with proper permission validation.
+         */
+        public async getContacts(params: RequestType<typeof api_third_party_get_contacts_getContacts>): Promise<ResponseType<typeof api_third_party_get_contacts_getContacts>> {
+            // Convert our params into the objects we need for the request
+            const headers = makeRecord<string, string>({
+                authorization: params.authorization,
+            })
+
+            const query = makeRecord<string, string | string[]>({
+                limit:  params.limit === undefined ? undefined : String(params.limit),
+                offset: params.offset === undefined ? undefined : String(params.offset),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/api/v1/contacts`, {headers, query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_third_party_get_contacts_getContacts>
         }
     }
 }

@@ -2,10 +2,11 @@ import { api } from "encore.dev/api";
 import { crmDB } from "./db";
 import { randomBytes } from "crypto";
 
-export interface GenerateApiKeyRequest {
+export interface CreateApiKeyRequest {
   companyId: number;
   name: string;
   description?: string;
+  permissions: string[];
 }
 
 export interface ApiKey {
@@ -14,17 +15,18 @@ export interface ApiKey {
   name: string;
   description?: string;
   keyPrefix: string;
+  permissions: string[];
   isActive: boolean;
   createdAt: Date;
 }
 
-export interface GenerateApiKeyResponse {
+export interface CreateApiKeyResponse {
   apiKey: ApiKey;
   fullKey: string;
 }
 
-// Generates a new API key for a company.
-export const generateApiKey = api<GenerateApiKeyRequest, GenerateApiKeyResponse>(
+// Creates a new API key with specific permissions for a company.
+export const createApiKey = api<CreateApiKeyRequest, CreateApiKeyResponse>(
   { expose: true, method: "POST", path: "/api-keys" },
   async (req) => {
     try {
@@ -42,12 +44,13 @@ export const generateApiKey = api<GenerateApiKeyRequest, GenerateApiKeyResponse>
         name: string;
         description: string | null;
         key_prefix: string;
+        permissions: string;
         is_active: boolean;
         created_at: Date;
       }>`
-        INSERT INTO api_keys (company_id, name, description, key_hash, key_prefix, is_active, created_at)
-        VALUES (${req.companyId}, ${req.name}, ${req.description || null}, ${hashedKey}, ${keyPrefix}, TRUE, NOW())
-        RETURNING id, company_id, name, description, key_prefix, is_active, created_at
+        INSERT INTO api_keys (company_id, name, description, key_hash, key_prefix, permissions, is_active, created_at)
+        VALUES (${req.companyId}, ${req.name}, ${req.description || null}, ${hashedKey}, ${keyPrefix}, ${JSON.stringify(req.permissions)}, TRUE, NOW())
+        RETURNING id, company_id, name, description, key_prefix, permissions, is_active, created_at
       `;
 
       if (!apiKeyRow) {
@@ -61,13 +64,14 @@ export const generateApiKey = api<GenerateApiKeyRequest, GenerateApiKeyResponse>
           name: apiKeyRow.name,
           description: apiKeyRow.description || undefined,
           keyPrefix: apiKeyRow.key_prefix,
+          permissions: JSON.parse(apiKeyRow.permissions),
           isActive: apiKeyRow.is_active,
           createdAt: apiKeyRow.created_at,
         },
         fullKey, // Only returned once during creation
       };
     } catch (error) {
-      console.error('Error in generateApiKey:', error);
+      console.error('Error in createApiKey:', error);
       throw error;
     }
   }
