@@ -75,7 +75,7 @@ export const createImport = api<CreateImportRequest, ImportJob>(
 
       await tx.commit();
 
-      // Process the import asynchronously (in a real implementation, this would be a background job)
+      // Process the import asynchronously
       processImport(importJobId);
 
       // Return the created import job
@@ -127,86 +127,116 @@ export const createImport = api<CreateImportRequest, ImportJob>(
 );
 
 async function processImport(importJobId: number) {
-  // This would typically be run as a background job
-  setTimeout(async () => {
-    const tx = await crmDB.begin();
-    
-    try {
-      const importRows = await tx.queryAll<{
-        id: number;
-        row_number: number;
-        raw_data: string;
-      }>`
-        SELECT id, row_number, raw_data 
-        FROM import_rows 
-        WHERE import_job_id = ${importJobId} AND status = 'pending'
-        ORDER BY row_number
-      `;
+  try {
+    const job = await crmDB.queryRow<{ company_id: number; duplicate_handling: string }>`
+      SELECT company_id, duplicate_handling FROM import_jobs WHERE id = ${importJobId}
+    `;
 
-      let successCount = 0;
-      let errorCount = 0;
+    if (!job) {
+      throw new Error(`Import job ${importJobId} not found.`);
+    }
 
-      for (const row of importRows) {
-        try {
-          const data = JSON.parse(row.raw_data);
-          
-          // Create person if we have required data
-          if (data.firstName || data.email) {
+    const { company_id: companyId, duplicate_handling: duplicateHandling } = job;
+
+    const importRows = await crmDB.queryAll<{
+      id: number;
+      row_number: number;
+      raw_data: string;
+    }>`
+      SELECT id, row_number, raw_data 
+      FROM import_rows 
+      WHERE import_job_id = ${importJobId} AND status = 'pending'
+      ORDER BY row_number
+    `;
+
+    let successCount = 0;
+    let errorCount = 0;
+    let processedCount = 0;
+
+    for (const row of importRows) {
+      const tx = await crmDB.begin();
+      try {
+        const data = JSON.parse(row.raw_data);
+        
+        if (!data.firstName && !data.email) {
+          throw new Error("Missing required fields: firstName or email");
+        }
+
+        const existingPerson = data.email ? await tx.queryRow<{ id: number }>`
+          SELECT id FROM people WHERE email = ${data.email} AND company_id = ${companyId}
+        ` : null;
+
+        if (existingPerson) {
+          if (duplicateHandling === 'skip') {
+            await tx.exec`UPDATE import_rows SET status = 'skipped', person_id = ${existingPerson.id}, error_message = 'Duplicate email (skipped)' WHERE id = ${row.id}`;
+          } else if (duplicateHandling === 'merge') {
+            await tx.exec`
+              UPDATE people SET
+                first_name = ${data.firstName || ''},
+                last_name = ${data.lastName || null},
+                phone = ${data.phone || null},
+                job_title = ${data.jobTitle || null},
+                updated_at = NOW()
+              WHERE id = ${existingPerson.id}
+            `;
+            await tx.exec`UPDATE import_rows SET status = 'success', person_id = ${existingPerson.id}, error_message = 'Merged with existing contact' WHERE id = ${row.id}`;
+            successCount++;
+          } else { // 'create'
             const personRow = await tx.queryRow<{ id: number }>`
               INSERT INTO people (company_id, first_name, last_name, email, phone, job_title, created_at, updated_at)
-              VALUES (1, ${data.firstName || ''}, ${data.lastName || null}, ${data.email || null}, ${data.phone || null}, ${data.jobTitle || null}, NOW(), NOW())
+              VALUES (${companyId}, ${data.firstName || ''}, ${data.lastName || null}, ${data.email || null}, ${data.phone || null}, ${data.jobTitle || null}, NOW(), NOW())
               RETURNING id
             `;
-
-            if (personRow) {
-              await tx.exec`
-                UPDATE import_rows 
-                SET status = 'success', person_id = ${personRow.id}
-                WHERE id = ${row.id}
-              `;
-              successCount++;
-            } else {
-              throw new Error("Failed to create person");
-            }
-          } else {
-            throw new Error("Missing required fields: firstName or email");
+            if (!personRow) throw new Error("Failed to create person (possibly due to unique constraint on email)");
+            await tx.exec`UPDATE import_rows SET status = 'success', person_id = ${personRow.id} WHERE id = ${row.id}`;
+            successCount++;
           }
-        } catch (error) {
-          await tx.exec`
-            UPDATE import_rows 
-            SET status = 'error', error_message = ${error instanceof Error ? error.message : 'Unknown error'}
-            WHERE id = ${row.id}
+        } else {
+          const personRow = await tx.queryRow<{ id: number }>`
+            INSERT INTO people (company_id, first_name, last_name, email, phone, job_title, created_at, updated_at)
+            VALUES (${companyId}, ${data.firstName || ''}, ${data.lastName || null}, ${data.email || null}, ${data.phone || null}, ${data.jobTitle || null}, NOW(), NOW())
+            RETURNING id
           `;
-          errorCount++;
+          if (!personRow) throw new Error("Failed to create person");
+          await tx.exec`UPDATE import_rows SET status = 'success', person_id = ${personRow.id} WHERE id = ${row.id}`;
+          successCount++;
         }
+        await tx.commit();
+      } catch (error) {
+        await tx.rollback();
+        await crmDB.exec`
+          UPDATE import_rows 
+          SET status = 'error', error_message = ${error instanceof Error ? error.message : 'Unknown error'}
+          WHERE id = ${row.id}
+        `;
+        errorCount++;
       }
 
-      // Update import job status
-      await tx.exec`
-        UPDATE import_jobs 
-        SET 
-          status = 'completed',
-          processed_rows = ${importRows.length},
-          success_rows = ${successCount},
-          error_rows = ${errorCount},
-          updated_at = NOW()
-        WHERE id = ${importJobId}
-      `;
-
-      await tx.commit();
-
-    } catch (error) {
-      await tx.rollback();
-      
-      // Mark import as failed
+      processedCount++;
       await crmDB.exec`
-        UPDATE import_jobs 
-        SET 
-          status = 'failed',
-          error_log = ${error instanceof Error ? error.message : 'Unknown error'},
-          updated_at = NOW()
+        UPDATE import_jobs
+        SET processed_rows = ${processedCount}
         WHERE id = ${importJobId}
       `;
     }
-  }, 1000); // Simulate processing delay
+
+    await crmDB.exec`
+      UPDATE import_jobs 
+      SET 
+        status = 'completed',
+        success_rows = ${successCount},
+        error_rows = ${errorCount},
+        updated_at = NOW()
+      WHERE id = ${importJobId}
+    `;
+  } catch (error) {
+    await crmDB.exec`
+      UPDATE import_jobs 
+      SET 
+        status = 'failed',
+        error_log = ${error instanceof Error ? error.message : 'Unknown error'},
+        updated_at = NOW()
+      WHERE id = ${importJobId}
+    `;
+  }
 }

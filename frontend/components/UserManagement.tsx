@@ -12,13 +12,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/components/ui/use-toast';
 import { InviteUserDialog } from '@/components/InviteUserDialog';
 import { EditUserDialog } from '@/components/EditUserDialog';
+import type { User as UserType } from '~backend/users/list_users';
 
 export function UserManagement() {
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
-  const [userToEdit, setUserToEdit] = useState<any>(null);
-  const [userToDeactivate, setUserToDeactivate] = useState<any>(null);
+  const [userToEdit, setUserToEdit] = useState<UserType | null>(null);
+  const [userToDeactivate, setUserToDeactivate] = useState<UserType | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -100,12 +101,12 @@ export function UserManagement() {
     toast({ title: "Success", description: "User updated successfully!" });
   };
 
-  const handleEditUser = (user: any) => {
+  const handleEditUser = (user: UserType) => {
     setUserToEdit(user);
     setShowEditDialog(true);
   };
 
-  const handleDeactivateUser = (user: any) => {
+  const handleDeactivateUser = (user: UserType) => {
     setUserToDeactivate(user);
   };
 

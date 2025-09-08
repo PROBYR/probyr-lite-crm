@@ -9,6 +9,7 @@ export interface User {
   lastName?: string;
   role: 'admin' | 'member';
   isActive: boolean;
+  createdAt: Date;
 }
 
 export interface ListUsersResponse {
@@ -23,7 +24,7 @@ export const listUsers = api<void, ListUsersResponse>({
 }, async () => {
   try {
     const rows = await crmDB.queryAll<any>`
-      SELECT id, company_id, email, first_name, last_name, role, is_active
+      SELECT id, company_id, email, first_name, last_name, role, is_active, created_at
       FROM users 
       ORDER BY first_name, last_name
     `;
@@ -36,6 +37,7 @@ export const listUsers = api<void, ListUsersResponse>({
       lastName: row.last_name || undefined,
       role: row.role,
       isActive: row.is_active,
+      createdAt: row.created_at,
     }));
 
     return { users };

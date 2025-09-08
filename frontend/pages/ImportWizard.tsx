@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
+import type { ImportJob } from '~backend/imports/get_import_status';
 
 type Step = 'upload' | 'mapping' | 'preview' | 'import' | 'complete';
 
@@ -33,6 +34,7 @@ export function ImportWizard() {
   const [duplicateHandling, setDuplicateHandling] = useState<'skip' | 'merge' | 'create'>('skip');
   const [importProgress, setImportProgress] = useState(0);
   const [importJobId, setImportJobId] = useState<number | null>(null);
+  const [importResult, setImportResult] = useState<ImportJob | null>(null);
   const { toast } = useToast();
 
   const createImportMutation = useMutation({
@@ -69,23 +71,27 @@ export function ImportWizard() {
         const status = await backend.imports.getImportStatus({ id: jobId });
         setImportProgress(status.progress);
         
-        if (status.status === 'completed') {
+        if (status.status === 'completed' || status.status === 'failed') {
+          setImportResult(status);
           setCurrentStep('complete');
-          toast({
-            title: "Success",
-            description: `Import completed! ${status.successRows} contacts imported successfully.`,
-          });
-        } else if (status.status === 'failed') {
-          toast({
-            title: "Error",
-            description: "Import failed. Please try again.",
-            variant: "destructive",
-          });
+          if (status.status === 'completed') {
+            toast({
+              title: "Success",
+              description: `Import completed! ${status.successRows} contacts imported.`,
+            });
+          } else {
+            toast({
+              title: "Import Failed",
+              description: status.errorLog || "An unknown error occurred during import.",
+              variant: "destructive",
+            });
+          }
         } else {
           setTimeout(checkStatus, 1000);
         }
       } catch (error) {
         console.error('Failed to check import status:', error);
+        // Stop polling on error
       }
     };
     
@@ -341,24 +347,51 @@ export function ImportWizard() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <CheckCircle className="w-5 h-5 text-green-600" />
-          Import Complete
+          {importResult?.status === 'completed' ? (
+            <CheckCircle className="w-5 h-5 text-green-600" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-red-600" />
+          )}
+          Import {importResult?.status === 'completed' ? 'Complete' : 'Failed'}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="text-center py-4">
-          <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Contacts imported successfully!
-          </h3>
-          <p className="text-gray-600">
-            Your contacts have been added to your CRM and are ready to use.
-          </p>
+          {importResult?.status === 'completed' ? (
+            <>
+              <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Contacts imported successfully!
+              </h3>
+              <p className="text-gray-600">
+                {importResult.successRows} of {importResult.totalRows} contacts were imported.
+                {importResult.errorRows > 0 && ` ${importResult.errorRows} rows had errors.`}
+              </p>
+            </>
+          ) : (
+            <>
+              <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Import failed
+              </h3>
+              <p className="text-gray-600">
+                {importResult?.errorLog || 'An unknown error occurred.'}
+              </p>
+            </>
+          )}
         </div>
         
         <div className="flex gap-2 justify-center">
-          <Button onClick={() => setCurrentStep('upload')}>
-            Import More
+          <Button onClick={() => {
+            setCurrentStep('upload');
+            setCsvData(null);
+            setFieldMapping({});
+            setDuplicateHandling('skip');
+            setImportProgress(0);
+            setImportJobId(null);
+            setImportResult(null);
+          }}>
+            Import Another File
           </Button>
           <Button variant="outline" onClick={() => window.location.href = '/contacts'}>
             View Contacts
