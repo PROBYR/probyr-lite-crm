@@ -11,12 +11,19 @@ export interface Person {
   phone?: string;
   jobTitle?: string;
   status: string;
+  assignedTo?: number;
   lastContactedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
   company?: {
     id: number;
     name: string;
+  };
+  owner?: {
+    id: number;
+    firstName: string;
+    lastName?: string;
+    email: string;
   };
   tags: Array<{
     id: number;
@@ -29,6 +36,7 @@ export interface ListPeopleParams {
   search?: Query<string>;
   tagIds?: Query<string>;
   sortBy?: Query<string>;
+  sortOrder?: Query<string>;
   limit?: Query<number>;
   offset?: Query<number>;
 }
@@ -46,6 +54,7 @@ export const listPeople = api<ListPeopleParams, ListPeopleResponse>(
       const search = params.search || '';
       const tagIds = params.tagIds ? params.tagIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id)) : [];
       const sortBy = params.sortBy || 'name';
+      const sortOrder = params.sortOrder || 'asc';
       const limit = params.limit || 50;
       const offset = params.offset || 0;
 
@@ -74,13 +83,22 @@ export const listPeople = api<ListPeopleParams, ListPeopleResponse>(
       let orderClause = 'ORDER BY ';
       switch (sortBy) {
         case 'name':
-          orderClause += 'p.first_name, p.last_name';
+          orderClause += `p.first_name ${sortOrder.toUpperCase()}, p.last_name ${sortOrder.toUpperCase()}`;
           break;
-        case 'lastContacted':
-          orderClause += 'p.last_contacted_at DESC NULLS LAST';
+        case 'email':
+          orderClause += `p.email ${sortOrder.toUpperCase()} NULLS LAST`;
           break;
         case 'company':
-          orderClause += 'c.name, p.first_name, p.last_name';
+          orderClause += `c.name ${sortOrder.toUpperCase()} NULLS LAST, p.first_name, p.last_name`;
+          break;
+        case 'status':
+          orderClause += `p.status ${sortOrder.toUpperCase()}, p.first_name, p.last_name`;
+          break;
+        case 'owner':
+          orderClause += `u.first_name ${sortOrder.toUpperCase()} NULLS LAST, u.last_name ${sortOrder.toUpperCase()} NULLS LAST, p.first_name, p.last_name`;
+          break;
+        case 'lastContacted':
+          orderClause += `p.last_contacted_at ${sortOrder.toUpperCase()} NULLS LAST`;
           break;
         default:
           orderClause += 'p.created_at DESC';
@@ -95,6 +113,10 @@ export const listPeople = api<ListPeopleParams, ListPeopleResponse>(
           p.*,
           c.id as company_id,
           c.name as company_name,
+          u.id as owner_id,
+          u.first_name as owner_first_name,
+          u.last_name as owner_last_name,
+          u.email as owner_email,
           COALESCE(
             JSON_AGG(
               JSON_BUILD_OBJECT('id', t.id, 'name', t.name, 'color', t.color)
@@ -103,10 +125,11 @@ export const listPeople = api<ListPeopleParams, ListPeopleResponse>(
           ) as tags
         FROM people p
         LEFT JOIN companies c ON p.company_id = c.id
+        LEFT JOIN users u ON p.assigned_to = u.id
         LEFT JOIN contact_tags ct ON p.id = ct.person_id
         LEFT JOIN tags t ON ct.tag_id = t.id
         ${whereClause}
-        GROUP BY p.id, c.id, c.name
+        GROUP BY p.id, c.id, c.name, u.id, u.first_name, u.last_name, u.email
         ${orderClause}
         ${limitClause}
       `;
@@ -120,10 +143,15 @@ export const listPeople = api<ListPeopleParams, ListPeopleResponse>(
         phone: string | null;
         job_title: string | null;
         status: string;
+        assigned_to: number | null;
         last_contacted_at: Date | null;
         created_at: Date;
         updated_at: Date;
         company_name: string | null;
+        owner_id: number | null;
+        owner_first_name: string | null;
+        owner_last_name: string | null;
+        owner_email: string | null;
         tags: any;
       }>(query, ...queryParams);
 
@@ -148,12 +176,19 @@ export const listPeople = api<ListPeopleParams, ListPeopleResponse>(
         phone: row.phone || undefined,
         jobTitle: row.job_title || undefined,
         status: row.status,
+        assignedTo: row.assigned_to || undefined,
         lastContactedAt: row.last_contacted_at || undefined,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         company: row.company_id && row.company_name ? {
           id: row.company_id,
           name: row.company_name,
+        } : undefined,
+        owner: row.owner_id ? {
+          id: row.owner_id,
+          firstName: row.owner_first_name || '',
+          lastName: row.owner_last_name || undefined,
+          email: row.owner_email || '',
         } : undefined,
         tags: Array.isArray(row.tags) ? row.tags.filter(t => t && t.id) : [],
       }));

@@ -3,13 +3,16 @@ import { Link } from 'react-router-dom';
 import { Tag, Phone, Mail, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import type { Person } from '~backend/people/list_people';
 
 interface ContactsGridProps {
   people: Person[];
+  selectedIds: number[];
+  onSelectionChange: (ids: number[]) => void;
 }
 
-export function ContactsGrid({ people }: ContactsGridProps) {
+export function ContactsGrid({ people, selectedIds, onSelectionChange }: ContactsGridProps) {
   const formatLastContacted = (date?: Date) => {
     if (!date) return 'Never';
     const now = new Date();
@@ -23,13 +26,29 @@ export function ContactsGrid({ people }: ContactsGridProps) {
     return contacted.toLocaleDateString();
   };
 
+  const handleSelectRow = (id: number, checked: boolean) => {
+    if (checked) {
+      onSelectionChange([...selectedIds, id]);
+    } else {
+      onSelectionChange(selectedIds.filter(selectedId => selectedId !== id));
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {people.map((person) => (
-        <Link key={person.id} to={`/contacts/${person.id}`}>
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+        <Card key={person.id} className="hover:shadow-md transition-shadow relative">
+          <div className="absolute top-3 right-3 z-10">
+            <Checkbox
+              checked={selectedIds.includes(person.id)}
+              onCheckedChange={(checked) => handleSelectRow(person.id, !!checked)}
+              className="bg-white border-2"
+            />
+          </div>
+          
+          <Link to={`/contacts/${person.id}`} className="block">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-lg flex items-center gap-2 pr-8">
                 <User className="w-5 h-5 text-gray-500" />
                 {person.firstName} {person.lastName}
               </CardTitle>
@@ -38,6 +57,11 @@ export function ContactsGrid({ people }: ContactsGridProps) {
               )}
               {person.company && (
                 <p className="text-sm text-gray-500">{person.company.name}</p>
+              )}
+              {person.owner && (
+                <p className="text-xs text-blue-600">
+                  Owner: {person.owner.firstName} {person.owner.lastName}
+                </p>
               )}
             </CardHeader>
             
@@ -87,8 +111,8 @@ export function ContactsGrid({ people }: ContactsGridProps) {
                 </div>
               )}
             </CardContent>
-          </Card>
-        </Link>
+          </Link>
+        </Card>
       ))}
     </div>
   );

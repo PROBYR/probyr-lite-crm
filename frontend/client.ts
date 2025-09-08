@@ -477,8 +477,12 @@ export namespace outreach {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
+import { assignOwner as api_people_assign_owner_assignOwner } from "~backend/people/assign_owner";
+import { bulkTagUpdate as api_people_bulk_tag_update_bulkTagUpdate } from "~backend/people/bulk_tag_update";
 import { createPerson as api_people_create_person_createPerson } from "~backend/people/create_person";
+import { deleteContacts as api_people_delete_contacts_deleteContacts } from "~backend/people/delete_contacts";
 import { deletePerson as api_people_delete_person_deletePerson } from "~backend/people/delete_person";
+import { exportContacts as api_people_export_contacts_exportContacts } from "~backend/people/export_contacts";
 import { getPerson as api_people_get_person_getPerson } from "~backend/people/get_person";
 import { listPeople as api_people_list_people_listPeople } from "~backend/people/list_people";
 import { updatePerson as api_people_update_person_updatePerson } from "~backend/people/update_person";
@@ -490,11 +494,33 @@ export namespace people {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
+            this.assignOwner = this.assignOwner.bind(this)
+            this.bulkTagUpdate = this.bulkTagUpdate.bind(this)
             this.createPerson = this.createPerson.bind(this)
+            this.deleteContacts = this.deleteContacts.bind(this)
             this.deletePerson = this.deletePerson.bind(this)
+            this.exportContacts = this.exportContacts.bind(this)
             this.getPerson = this.getPerson.bind(this)
             this.listPeople = this.listPeople.bind(this)
             this.updatePerson = this.updatePerson.bind(this)
+        }
+
+        /**
+         * Assigns an owner to multiple contacts.
+         */
+        public async assignOwner(params: RequestType<typeof api_people_assign_owner_assignOwner>): Promise<ResponseType<typeof api_people_assign_owner_assignOwner>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/people/assign-owner`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_people_assign_owner_assignOwner>
+        }
+
+        /**
+         * Adds or removes tags from multiple contacts.
+         */
+        public async bulkTagUpdate(params: RequestType<typeof api_people_bulk_tag_update_bulkTagUpdate>): Promise<ResponseType<typeof api_people_bulk_tag_update_bulkTagUpdate>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/people/bulk-tag-update`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_people_bulk_tag_update_bulkTagUpdate>
         }
 
         /**
@@ -507,10 +533,28 @@ export namespace people {
         }
 
         /**
+         * Deletes multiple contacts.
+         */
+        public async deleteContacts(params: RequestType<typeof api_people_delete_contacts_deleteContacts>): Promise<ResponseType<typeof api_people_delete_contacts_deleteContacts>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/people/delete-contacts`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_people_delete_contacts_deleteContacts>
+        }
+
+        /**
          * Deletes a person.
          */
         public async deletePerson(params: { id: number }): Promise<void> {
             await this.baseClient.callTypedAPI(`/people/${encodeURIComponent(params.id)}`, {method: "DELETE", body: undefined})
+        }
+
+        /**
+         * Exports contacts to CSV format.
+         */
+        public async exportContacts(params: RequestType<typeof api_people_export_contacts_exportContacts>): Promise<ResponseType<typeof api_people_export_contacts_exportContacts>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/people/export-contacts`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_people_export_contacts_exportContacts>
         }
 
         /**
@@ -528,11 +572,12 @@ export namespace people {
         public async listPeople(params: RequestType<typeof api_people_list_people_listPeople>): Promise<ResponseType<typeof api_people_list_people_listPeople>> {
             // Convert our params into the objects we need for the request
             const query = makeRecord<string, string | string[]>({
-                limit:  params.limit === undefined ? undefined : String(params.limit),
-                offset: params.offset === undefined ? undefined : String(params.offset),
-                search: params.search,
-                sortBy: params.sortBy,
-                tagIds: params.tagIds,
+                limit:     params.limit === undefined ? undefined : String(params.limit),
+                offset:    params.offset === undefined ? undefined : String(params.offset),
+                search:    params.search,
+                sortBy:    params.sortBy,
+                sortOrder: params.sortOrder,
+                tagIds:    params.tagIds,
             })
 
             // Now make the actual call to the API

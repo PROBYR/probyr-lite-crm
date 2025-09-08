@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Plus, Filter, Tag, LayoutGrid, List } from 'lucide-react';
+import { Search, Plus, Filter, LayoutGrid, List } from 'lucide-react';
 import backend from '~backend/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,27 +10,31 @@ import { CreatePersonDialog } from '@/components/CreatePersonDialog';
 import { ContactsGrid } from '@/components/ContactsGrid';
 import { ContactsTable } from '@/components/ContactsTable';
 import { PaginationControls } from '@/components/PaginationControls';
+import { BulkActionsMenu } from '@/components/BulkActionsMenu';
 import { cn } from '@/lib/utils';
 
 type ViewMode = 'grid' | 'table';
 
 export function ContactsList() {
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
   const [selectedTags, setSelectedTags] = useState<string | undefined>();
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [{ pageIndex, pageSize }, setPagination] = useState({ pageIndex: 0, pageSize: 25 });
   const { toast } = useToast();
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['people', search, sortBy, selectedTags, pageIndex, pageSize],
+    queryKey: ['people', search, sortBy, sortOrder, selectedTags, pageIndex, pageSize],
     queryFn: async () => {
       try {
         const offset = pageIndex * pageSize;
         const params = {
           search: search || undefined,
           sortBy: sortBy,
+          sortOrder: sortOrder,
           tagIds: selectedTags,
           limit: pageSize,
           offset: offset,
@@ -49,6 +53,18 @@ export function ContactsList() {
     placeholderData: (previousData) => previousData,
   });
 
+  const { data: tagsData } = useQuery({
+    queryKey: ['tags'],
+    queryFn: async () => {
+      try {
+        return await backend.tags.listTags({});
+      } catch (error) {
+        console.error('Failed to fetch tags:', error);
+        return { tags: [] };
+      }
+    },
+  });
+
   const handlePersonCreated = () => {
     refetch();
     setShowCreateDialog(false);
@@ -58,8 +74,29 @@ export function ContactsList() {
     });
   };
 
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+    // Reset pagination when sorting changes
+    setPagination({ pageIndex: 0, pageSize });
+  };
+
+  const handleRefresh = () => {
+    refetch();
+  };
+
   const people = data?.people || [];
   const totalCount = data?.total || 0;
+  const tags = tagsData?.tags || [];
+
+  // Clear selection when data changes (e.g., page change, search)
+  React.useEffect(() => {
+    setSelectedIds([]);
+  }, [data]);
 
   return (
     <div className="p-4 lg:p-8">
@@ -75,6 +112,17 @@ export function ContactsList() {
           Add Contact
         </Button>
       </div>
+
+      {/* Bulk Actions */}
+      {selectedIds.length > 0 && (
+        <div className="mb-4">
+          <BulkActionsMenu
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            onRefresh={handleRefresh}
+          />
+        </div>
+      )}
 
       {/* Filters and View Switcher */}
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
@@ -94,8 +142,11 @@ export function ContactsList() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="lastContacted">Last Contacted</SelectItem>
+            <SelectItem value="email">Email</SelectItem>
             <SelectItem value="company">Company</SelectItem>
+            <SelectItem value="status">Status</SelectItem>
+            <SelectItem value="owner">Owner</SelectItem>
+            <SelectItem value="lastContacted">Last Contacted</SelectItem>
           </SelectContent>
         </Select>
 
@@ -106,7 +157,17 @@ export function ContactsList() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all-tags">All tags</SelectItem>
-            {/* Assuming tags are fetched elsewhere or not needed for this component directly */}
+            {tags.map((tag) => (
+              <SelectItem key={tag.id} value={String(tag.id)}>
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-full" 
+                    style={{ backgroundColor: tag.color }}
+                  />
+                  {tag.name}
+                </div>
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -132,9 +193,21 @@ export function ContactsList() {
 
       {/* Content Area */}
       {viewMode === 'grid' ? (
-        <ContactsGrid people={people} />
+        <ContactsGrid 
+          people={people} 
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
+        />
       ) : (
-        <ContactsTable people={people} isLoading={isLoading} />
+        <ContactsTable 
+          people={people} 
+          isLoading={isLoading}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        />
       )}
 
       {/* Pagination */}
