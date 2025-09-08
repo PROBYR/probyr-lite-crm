@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Mail, Calendar, Settings, Link2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, Calendar, Settings, Link2, CheckCircle, AlertCircle, TestTube } from 'lucide-react';
 import backend from '~backend/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -116,6 +116,34 @@ export function UserConnectionSettings({ userId }: UserConnectionSettingsProps) 
     },
   });
 
+  const testEmailConnectionMutation = useMutation({
+    mutationFn: async () => {
+      return await backend.outreach.testEmailConnection({ userId });
+    },
+    onSuccess: (result) => {
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: result.message,
+        });
+      } else {
+        toast({
+          title: "Connection Test Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error) => {
+      console.error('Failed to test email connection:', error);
+      toast({
+        title: "Error",
+        description: "Failed to test email connection. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleEmailSubmit = () => {
     if (!emailFormData.emailAddress) {
       toast({
@@ -130,6 +158,10 @@ export function UserConnectionSettings({ userId }: UserConnectionSettingsProps) 
 
   const handleCalendarSubmit = () => {
     connectCalendarMutation.mutate(calendarFormData);
+  };
+
+  const handleTestConnection = () => {
+    testEmailConnectionMutation.mutate();
   };
 
   const simulateOAuth = (provider: string) => {
@@ -183,110 +215,123 @@ export function UserConnectionSettings({ userId }: UserConnectionSettingsProps) 
               )}
             </div>
           </div>
-          <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Link2 className="w-4 h-4 mr-2" />
-                {connections?.email ? 'Reconnect' : 'Connect'}
+          <div className="flex gap-2">
+            {connections?.email && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleTestConnection}
+                disabled={testEmailConnectionMutation.isPending}
+              >
+                <TestTube className="w-4 h-4 mr-2" />
+                {testEmailConnectionMutation.isPending ? 'Testing...' : 'Test Connection'}
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Connect Email Account</DialogTitle>
-                <DialogDescription>
-                  Choose your email provider and connect your account.
-                </DialogDescription>
-              </DialogHeader>
-              <Tabs defaultValue="oauth" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="oauth">OAuth (Recommended)</TabsTrigger>
-                  <TabsTrigger value="manual">Manual Setup</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="oauth" className="space-y-4">
-                  <div className="space-y-3">
-                    <Button 
-                      className="w-full" 
-                      variant="outline"
-                      onClick={() => simulateOAuth('Google')}
-                    >
-                      Connect Gmail
-                    </Button>
-                    <Button 
-                      className="w-full" 
-                      variant="outline"
-                      onClick={() => simulateOAuth('Microsoft')}
-                    >
-                      Connect Outlook
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500 text-center">
-                    Secure one-click setup with OAuth 2.0
-                  </p>
-                </TabsContent>
-                
-                <TabsContent value="manual" className="space-y-4">
-                  <div>
-                    <Label htmlFor="email-address">Email Address *</Label>
-                    <Input
-                      id="email-address"
-                      type="email"
-                      value={emailFormData.emailAddress}
-                      onChange={(e) => setEmailFormData(prev => ({ ...prev, emailAddress: e.target.value }))}
-                      placeholder="your.email@company.com"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+            )}
+            <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Link2 className="w-4 h-4 mr-2" />
+                  {connections?.email ? 'Reconnect' : 'Connect'}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Connect Email Account</DialogTitle>
+                  <DialogDescription>
+                    Choose your email provider and connect your account.
+                  </DialogDescription>
+                </DialogHeader>
+                <Tabs defaultValue="oauth" className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="oauth">OAuth (Recommended)</TabsTrigger>
+                    <TabsTrigger value="manual">Manual Setup</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="oauth" className="space-y-4">
+                    <div className="space-y-3">
+                      <Button 
+                        className="w-full" 
+                        variant="outline"
+                        onClick={() => simulateOAuth('Google')}
+                      >
+                        Connect Gmail
+                      </Button>
+                      <Button 
+                        className="w-full" 
+                        variant="outline"
+                        onClick={() => simulateOAuth('Microsoft')}
+                      >
+                        Connect Outlook
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-500 text-center">
+                      Secure one-click setup with OAuth 2.0
+                    </p>
+                  </TabsContent>
+                  
+                  <TabsContent value="manual" className="space-y-4">
                     <div>
-                      <Label htmlFor="smtp-host">SMTP Host</Label>
+                      <Label htmlFor="email-address">Email Address *</Label>
                       <Input
-                        id="smtp-host"
-                        value={emailFormData.smtpHost}
-                        onChange={(e) => setEmailFormData(prev => ({ ...prev, smtpHost: e.target.value }))}
-                        placeholder="smtp.gmail.com"
+                        id="email-address"
+                        type="email"
+                        value={emailFormData.emailAddress}
+                        onChange={(e) => setEmailFormData(prev => ({ ...prev, emailAddress: e.target.value }))}
+                        placeholder="your.email@company.com"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="smtp-port">SMTP Port</Label>
-                      <Input
-                        id="smtp-port"
-                        type="number"
-                        value={emailFormData.smtpPort}
-                        onChange={(e) => setEmailFormData(prev => ({ ...prev, smtpPort: parseInt(e.target.value) }))}
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="smtp-host">SMTP Host</Label>
+                        <Input
+                          id="smtp-host"
+                          value={emailFormData.smtpHost}
+                          onChange={(e) => setEmailFormData(prev => ({ ...prev, smtpHost: e.target.value }))}
+                          placeholder="smtp.gmail.com"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="smtp-port">SMTP Port</Label>
+                        <Input
+                          id="smtp-port"
+                          type="number"
+                          value={emailFormData.smtpPort}
+                          onChange={(e) => setEmailFormData(prev => ({ ...prev, smtpPort: parseInt(e.target.value) }))}
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="smtp-username">Username</Label>
-                      <Input
-                        id="smtp-username"
-                        value={emailFormData.smtpUsername}
-                        onChange={(e) => setEmailFormData(prev => ({ ...prev, smtpUsername: e.target.value }))}
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="smtp-username">Username</Label>
+                        <Input
+                          id="smtp-username"
+                          value={emailFormData.smtpUsername}
+                          onChange={(e) => setEmailFormData(prev => ({ ...prev, smtpUsername: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="smtp-password">Password</Label>
+                        <Input
+                          id="smtp-password"
+                          type="password"
+                          value={emailFormData.smtpPassword}
+                          onChange={(e) => setEmailFormData(prev => ({ ...prev, smtpPassword: e.target.value }))}
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="smtp-password">Password</Label>
-                      <Input
-                        id="smtp-password"
-                        type="password"
-                        value={emailFormData.smtpPassword}
-                        onChange={(e) => setEmailFormData(prev => ({ ...prev, smtpPassword: e.target.value }))}
-                      />
+                    <div className="flex justify-end gap-2">
+                      <Button variant="outline" onClick={() => setShowEmailDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleEmailSubmit} disabled={connectEmailMutation.isPending}>
+                        {connectEmailMutation.isPending ? 'Connecting...' : 'Connect Email'}
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setShowEmailDialog(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleEmailSubmit} disabled={connectEmailMutation.isPending}>
-                      {connectEmailMutation.isPending ? 'Connecting...' : 'Connect Email'}
-                    </Button>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </DialogContent>
-          </Dialog>
+                  </TabsContent>
+                </Tabs>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Calendar Connection */}

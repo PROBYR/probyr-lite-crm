@@ -56,7 +56,13 @@ export function ContactsGrid({ people, selectedIds, onSelectionChange }: Contact
                 <p className="text-sm text-gray-600">{person.jobTitle}</p>
               )}
               {person.company && (
-                <p className="text-sm text-gray-500">{person.company.name}</p>
+                <Link 
+                  to={`/companies/${person.company.id}`}
+                  className="text-sm text-blue-600 hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {person.company.name}
+                </Link>
               )}
               {person.owner && (
                 <p className="text-xs text-blue-600">

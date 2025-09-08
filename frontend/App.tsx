@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Layout } from './components/Layout';
 import { ContactsList } from './pages/ContactsList';
 import { ContactProfile } from './pages/ContactProfile';
+import { CompaniesList } from './pages/CompaniesList';
+import { CompanyProfile } from './pages/CompanyProfile';
 import { Pipeline } from './pages/Pipeline';
 import { TasksDashboard } from './pages/TasksDashboard';
 import { ImportWizard } from './pages/ImportWizard';
@@ -27,6 +29,8 @@ function AppInner() {
           <Route path="/" element={<Navigate to="/contacts" replace />} />
           <Route path="/contacts" element={<ContactsList />} />
           <Route path="/contacts/:id" element={<ContactProfile />} />
+          <Route path="/companies" element={<CompaniesList />} />
+          <Route path="/companies/:id" element={<CompanyProfile />} />
           <Route path="/pipeline" element={<Pipeline />} />
           <Route path="/tasks" element={<TasksDashboard />} />
           <Route path="/import" element={<ImportWizard />} />

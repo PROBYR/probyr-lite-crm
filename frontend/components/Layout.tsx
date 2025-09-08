@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Users, 
+  Building,
   BarChart3, 
   CheckSquare, 
   Upload, 
@@ -18,6 +19,7 @@ interface LayoutProps {
 
 const navigation = [
   { name: 'Contacts', href: '/contacts', icon: Users },
+  { name: 'Companies', href: '/companies', icon: Building },
   { name: 'Pipeline', href: '/pipeline', icon: BarChart3 },
   { name: 'Tasks', href: '/tasks', icon: CheckSquare },
   { name: 'Import', href: '/import', icon: Upload },

@@ -151,7 +151,18 @@ export function ContactsTable({
                     </Link>
                   </TableCell>
                   <TableCell>{person.email || 'N/A'}</TableCell>
-                  <TableCell>{person.company?.name || 'N/A'}</TableCell>
+                  <TableCell>
+                    {person.company ? (
+                      <Link 
+                        to={`/companies/${person.company.id}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {person.company.name}
+                      </Link>
+                    ) : (
+                      'N/A'
+                    )}
+                  </TableCell>
                   <TableCell>{getStatusBadge(person.status)}</TableCell>
                   <TableCell>
                     {person.owner ? (

@@ -211,6 +211,7 @@ export namespace api_auth {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
+import { createCompany as api_company_create_company_createCompany } from "~backend/company/create_company";
 import { getCompany as api_company_get_company_getCompany } from "~backend/company/get_company";
 import { listCompanies as api_company_list_companies_listCompanies } from "~backend/company/list_companies";
 import { updateCompany as api_company_update_company_updateCompany } from "~backend/company/update_company";
@@ -222,9 +223,19 @@ export namespace company {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
+            this.createCompany = this.createCompany.bind(this)
             this.getCompany = this.getCompany.bind(this)
             this.listCompanies = this.listCompanies.bind(this)
             this.updateCompany = this.updateCompany.bind(this)
+        }
+
+        /**
+         * Creates a new company.
+         */
+        public async createCompany(params: RequestType<typeof api_company_create_company_createCompany>): Promise<ResponseType<typeof api_company_create_company_createCompany>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/companies`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_company_create_company_createCompany>
         }
 
         /**
@@ -456,6 +467,8 @@ export namespace leads {
 import { bookMeeting as api_outreach_book_meeting_bookMeeting } from "~backend/outreach/book_meeting";
 import { sendEmail as api_outreach_send_email_sendEmail } from "~backend/outreach/send_email";
 import { sendEmailWithTracking as api_outreach_send_email_with_tracking_sendEmailWithTracking } from "~backend/outreach/send_email_with_tracking";
+import { sendEmailWithValidation as api_outreach_send_email_with_validation_sendEmailWithValidation } from "~backend/outreach/send_email_with_validation";
+import { testEmailConnection as api_outreach_test_email_connection_testEmailConnection } from "~backend/outreach/test_email_connection";
 
 export namespace outreach {
 
@@ -467,6 +480,8 @@ export namespace outreach {
             this.bookMeeting = this.bookMeeting.bind(this)
             this.sendEmail = this.sendEmail.bind(this)
             this.sendEmailWithTracking = this.sendEmailWithTracking.bind(this)
+            this.sendEmailWithValidation = this.sendEmailWithValidation.bind(this)
+            this.testEmailConnection = this.testEmailConnection.bind(this)
         }
 
         /**
@@ -494,6 +509,24 @@ export namespace outreach {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/outreach/emails/tracked`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_outreach_send_email_with_tracking_sendEmailWithTracking>
+        }
+
+        /**
+         * Sends an email with real-time validation and server response checking.
+         */
+        public async sendEmailWithValidation(params: RequestType<typeof api_outreach_send_email_with_validation_sendEmailWithValidation>): Promise<ResponseType<typeof api_outreach_send_email_with_validation_sendEmailWithValidation>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/outreach/emails/validated`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_outreach_send_email_with_validation_sendEmailWithValidation>
+        }
+
+        /**
+         * Tests the email connection by sending a test email to the user's own email address.
+         */
+        public async testEmailConnection(params: RequestType<typeof api_outreach_test_email_connection_testEmailConnection>): Promise<ResponseType<typeof api_outreach_test_email_connection_testEmailConnection>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/outreach/test-email-connection`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_outreach_test_email_connection_testEmailConnection>
         }
     }
 }

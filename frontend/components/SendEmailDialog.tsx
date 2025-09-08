@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Mail, Settings } from 'lucide-react';
+import { AlertCircle, Mail, Settings, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface SendEmailDialogProps {
@@ -32,6 +32,7 @@ export function SendEmailDialog({ open, onOpenChange, onEmailSent, personId, per
     trackOpens: true,
     trackClicks: true,
   });
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   // Check if user has email connection
@@ -62,7 +63,7 @@ export function SendEmailDialog({ open, onOpenChange, onEmailSent, personId, per
 
   const sendEmailMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      return await backend.outreach.sendEmailWithTracking({
+      return await backend.outreach.sendEmailWithValidation({
         personId,
         fromUserId: 1, // Demo user
         subject: data.subject,
@@ -71,14 +72,23 @@ export function SendEmailDialog({ open, onOpenChange, onEmailSent, personId, per
         trackClicks: data.trackClicks,
       });
     },
-    onSuccess: () => {
-      onEmailSent();
-      resetForm();
-      onOpenChange(false);
-      toast({
-        title: "Success",
-        description: "Email sent successfully!",
-      });
+    onSuccess: (result) => {
+      if (result.success) {
+        onEmailSent();
+        resetForm();
+        onOpenChange(false);
+        toast({
+          title: "Success",
+          description: result.message,
+        });
+      } else {
+        // Show error but keep dialog open for user to fix the issue
+        toast({
+          title: "Email Sending Failed",
+          description: result.message,
+          variant: "destructive",
+        });
+      }
     },
     onError: (error) => {
       console.error('Failed to send email:', error);
@@ -99,7 +109,7 @@ export function SendEmailDialog({ open, onOpenChange, onEmailSent, personId, per
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!userConnections?.email) {
@@ -120,7 +130,12 @@ export function SendEmailDialog({ open, onOpenChange, onEmailSent, personId, per
       return;
     }
     
-    sendEmailMutation.mutate(formData);
+    setIsLoading(true);
+    try {
+      await sendEmailMutation.mutateAsync(formData);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Add signature preview when dialog opens
@@ -154,7 +169,7 @@ export function SendEmailDialog({ open, onOpenChange, onEmailSent, personId, per
             Send Sales Email
           </DialogTitle>
           <DialogDescription>
-            Compose and send a tracked email. It will be logged to the contact's timeline.
+            Compose and send a tracked email with real-time delivery validation. It will be logged to the contact's timeline.
           </DialogDescription>
         </DialogHeader>
 
@@ -229,6 +244,9 @@ export function SendEmailDialog({ open, onOpenChange, onEmailSent, personId, per
                 <Label htmlFor="track-clicks" className="text-sm">Track link clicks</Label>
               </div>
             </div>
+            <p className="text-xs text-gray-500">
+              Email delivery will be validated in real-time before confirming success.
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
@@ -237,9 +255,17 @@ export function SendEmailDialog({ open, onOpenChange, onEmailSent, personId, per
             </Button>
             <Button 
               type="submit" 
-              disabled={sendEmailMutation.isPending || !hasEmailConnection}
+              disabled={isLoading || !hasEmailConnection}
+              className="min-w-24"
             >
-              {sendEmailMutation.isPending ? 'Sending...' : 'Send Email'}
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Sending...
+                </div>
+              ) : (
+                'Send Email'
+              )}
             </Button>
           </div>
         </form>
