@@ -13,13 +13,17 @@ import {
   Activity,
   Briefcase,
   Send,
-  Video
+  Video,
+  CheckSquare,
+  Target
 } from 'lucide-react';
 import backend from '~backend/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import { EditPersonDialog } from '@/components/EditPersonDialog';
 import { CreateTaskDialog } from '@/components/CreateTaskDialog';
@@ -84,6 +88,28 @@ export function ContactProfile() {
     enabled: !!id,
   });
 
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ taskId, isCompleted }: { taskId: number; isCompleted: boolean }) => {
+      return await backend.tasks.updateTask({ id: taskId, isCompleted });
+    },
+    onSuccess: () => {
+      refetchTasks();
+      refetchActivities();
+      toast({
+        title: "Success",
+        description: "Task updated successfully!",
+      });
+    },
+    onError: (error) => {
+      console.error('Failed to update task:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update task. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handlePersonUpdated = () => {
     refetchPerson();
     setShowEditDialog(false);
@@ -116,9 +142,37 @@ export function ContactProfile() {
     toast({ title: "Success", description: "Meeting booked and logged successfully!" });
   };
 
+  const handleTaskToggle = (taskId: number, currentCompleted: boolean) => {
+    updateTaskMutation.mutate({ taskId, isCompleted: !currentCompleted });
+  };
+
   const formatDate = (date?: Date) => {
     if (!date) return 'Never';
     return new Date(date).toLocaleDateString();
+  };
+
+  const formatCurrency = (value?: number) => {
+    if (typeof value !== 'number' || isNaN(value)) return '';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'New Lead':
+        return <Badge variant="outline">{status}</Badge>;
+      case 'Contacted':
+        return <Badge variant="secondary">{status}</Badge>;
+      case 'Reply Received':
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100/80">{status}</Badge>;
+      case 'Closed':
+        return <Badge variant="destructive">{status}</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
   if (isLoading) {
@@ -144,14 +198,29 @@ export function ContactProfile() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{person.firstName} {person.lastName}</h1>
             {person.jobTitle && <p className="text-gray-600 flex items-center gap-2"><Briefcase className="w-4 h-4" />{person.jobTitle}</p>}
+            <div className="mt-1">
+              {getStatusBadge(person.status)}
+            </div>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setShowEmailDialog(true)}><Send className="w-4 h-4 mr-2" />Send Email</Button>
-          <Button variant="outline" onClick={() => setShowMeetingDialog(true)}><Video className="w-4 h-4 mr-2" />Book Meeting</Button>
-          <Button variant="outline" onClick={() => setShowTaskDialog(true)}><Plus className="w-4 h-4 mr-2" />Add Task</Button>
-          <Button variant="outline" onClick={() => setShowDealDialog(true)}><Plus className="w-4 h-4 mr-2" />Add Deal</Button>
-          <Button onClick={() => setShowEditDialog(true)}><Edit className="w-4 h-4 mr-2" />Edit</Button>
+          {person.email && (
+            <Button variant="outline" onClick={() => setShowEmailDialog(true)}>
+              <Send className="w-4 h-4 mr-2" />Send Email
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => setShowMeetingDialog(true)}>
+            <Video className="w-4 h-4 mr-2" />Book Meeting
+          </Button>
+          <Button variant="outline" onClick={() => setShowTaskDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />Add Task
+          </Button>
+          <Button variant="outline" onClick={() => setShowDealDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />Add Deal
+          </Button>
+          <Button onClick={() => setShowEditDialog(true)}>
+            <Edit className="w-4 h-4 mr-2" />Edit
+          </Button>
         </div>
       </div>
 
@@ -159,42 +228,206 @@ export function ContactProfile() {
         <div className="lg:col-span-2">
           <Tabs defaultValue="activity">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="activity">Activity</TabsTrigger>
-              <TabsTrigger value="deals">Deals ({deals?.deals.length || 0})</TabsTrigger>
-              <TabsTrigger value="tasks">Tasks ({tasks?.tasks.length || 0})</TabsTrigger>
+              <TabsTrigger value="activity" className="flex items-center gap-2">
+                <Activity className="w-4 h-4" />
+                Activity
+              </TabsTrigger>
+              <TabsTrigger value="deals" className="flex items-center gap-2">
+                <Target className="w-4 h-4" />
+                Deals ({deals?.deals.length || 0})
+              </TabsTrigger>
+              <TabsTrigger value="tasks" className="flex items-center gap-2">
+                <CheckSquare className="w-4 h-4" />
+                Tasks ({tasks?.tasks.length || 0})
+              </TabsTrigger>
             </TabsList>
+            
             <TabsContent value="activity" className="mt-6">
-              <ActivityTimeline activities={activities?.activities || []} />
+              <ActivityTimeline 
+                activities={activities?.activities || []} 
+                personId={person.id}
+                onRefresh={refetchActivities}
+              />
             </TabsContent>
-            {/* Other tabs content here */}
+            
+            <TabsContent value="deals" className="mt-6">
+              {deals && deals.deals.length > 0 ? (
+                <div className="space-y-4">
+                  {deals.deals.map((deal) => (
+                    <Card key={deal.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-medium text-gray-900">{deal.title}</h4>
+                            <p className="text-sm text-gray-600 mt-1">Stage: {deal.stage.name}</p>
+                            {deal.expectedCloseDate && (
+                              <p className="text-sm text-gray-500">
+                                Expected close: {formatDate(deal.expectedCloseDate)}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            {deal.value && deal.value > 0 && (
+                              <p className="font-medium text-green-600">{formatCurrency(deal.value)}</p>
+                            )}
+                            <p className="text-sm text-gray-500">{deal.probability}% chance</p>
+                          </div>
+                        </div>
+                        {deal.notes && (
+                          <p className="text-sm text-gray-600 mt-2 p-2 bg-gray-50 rounded">{deal.notes}</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Target className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No deals yet</p>
+                  <p className="text-sm mt-1">Create a deal to track this contact's sales progress</p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="tasks" className="mt-6">
+              {tasks && tasks.tasks.length > 0 ? (
+                <div className="space-y-4">
+                  {tasks.tasks.map((task) => (
+                    <Card key={task.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            checked={task.isCompleted}
+                            onCheckedChange={() => handleTaskToggle(task.id, task.isCompleted)}
+                            className="mt-1"
+                          />
+                          <div className="flex-1">
+                            <h4 className={`font-medium ${task.isCompleted ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                              {task.title}
+                            </h4>
+                            {task.description && (
+                              <p className="text-sm text-gray-600 mt-1">{task.description}</p>
+                            )}
+                            <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                              {task.dueDate && (
+                                <span>Due: {formatDate(task.dueDate)}</span>
+                              )}
+                              {task.assignee && (
+                                <span>Assigned to: {task.assignee.firstName} {task.assignee.lastName}</span>
+                              )}
+                            </div>
+                          </div>
+                          {task.isCompleted && (
+                            <Badge variant="default">Completed</Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <CheckSquare className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No tasks yet</p>
+                  <p className="text-sm mt-1">Create tasks to keep track of follow-ups and action items</p>
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
         </div>
+        
         <div className="space-y-6">
           <Card>
             <CardHeader><CardTitle>Contact Information</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              {person.email && <div className="flex items-center gap-3"><Mail className="w-4 h-4 text-gray-500" /><a href={`mailto:${person.email}`} className="text-blue-600 hover:underline">{person.email}</a></div>}
-              {person.phone && <div className="flex items-center gap-3"><Phone className="w-4 h-4 text-gray-500" /><a href={`tel:${person.phone}`} className="text-blue-600 hover:underline">{person.phone}</a></div>}
-              {person.company && <div className="flex items-center gap-3"><Building className="w-4 h-4 text-gray-500" /><span>{person.company.name}</span></div>}
-              <div className="flex items-center gap-3"><Calendar className="w-4 h-4 text-gray-500" /><span className="text-sm">Last contacted: {formatDate(person.lastContactedAt)}</span></div>
+              {person.email && (
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-gray-500" />
+                  <a href={`mailto:${person.email}`} className="text-blue-600 hover:underline">{person.email}</a>
+                </div>
+              )}
+              {person.phone && (
+                <div className="flex items-center gap-3">
+                  <Phone className="w-4 h-4 text-gray-500" />
+                  <a href={`tel:${person.phone}`} className="text-blue-600 hover:underline">{person.phone}</a>
+                </div>
+              )}
+              {person.company && (
+                <div className="flex items-center gap-3">
+                  <Building className="w-4 h-4 text-gray-500" />
+                  <span>{person.company.name}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-3">
+                <Calendar className="w-4 h-4 text-gray-500" />
+                <span className="text-sm">Last contacted: {formatDate(person.lastContactedAt)}</span>
+              </div>
             </CardContent>
           </Card>
+          
           {person.tags.length > 0 && (
             <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2"><TagIcon className="w-4 h-4" />Tags</CardTitle></CardHeader>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TagIcon className="w-4 h-4" />
+                  Tags
+                </CardTitle>
+              </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
-                {person.tags.map((tag) => <Badge key={tag.id} variant="secondary" style={{ backgroundColor: `${tag.color}20`, color: tag.color, borderColor: tag.color }}>{tag.name}</Badge>)}
+                {person.tags.map((tag) => (
+                  <Badge 
+                    key={tag.id} 
+                    variant="secondary" 
+                    style={{ 
+                      backgroundColor: `${tag.color}20`,
+                      color: tag.color,
+                      borderColor: tag.color 
+                    }}
+                  >
+                    {tag.name}
+                  </Badge>
+                ))}
               </CardContent>
             </Card>
           )}
         </div>
       </div>
 
-      {person && <EditPersonDialog person={person} open={showEditDialog} onOpenChange={setShowEditDialog} onPersonUpdated={handlePersonUpdated} />}
-      <CreateTaskDialog open={showTaskDialog} onOpenChange={setShowTaskDialog} onTaskCreated={handleTaskCreated} defaultPersonId={person.id} />
-      <CreateDealDialog open={showDealDialog} onOpenChange={setShowDealDialog} onDealCreated={handleDealCreated} defaultPersonId={person.id} />
-      {person.email && <SendEmailDialog open={showEmailDialog} onOpenChange={setShowEmailDialog} onEmailSent={handleEmailSent} personId={person.id} personEmail={person.email} />}
-      <BookMeetingDialog open={showMeetingDialog} onOpenChange={setShowMeetingDialog} onMeetingBooked={handleMeetingBooked} personId={person.id} />
+      {person && (
+        <EditPersonDialog 
+          person={person} 
+          open={showEditDialog} 
+          onOpenChange={setShowEditDialog} 
+          onPersonUpdated={handlePersonUpdated} 
+        />
+      )}
+      <CreateTaskDialog 
+        open={showTaskDialog} 
+        onOpenChange={setShowTaskDialog} 
+        onTaskCreated={handleTaskCreated} 
+        defaultPersonId={person.id} 
+      />
+      <CreateDealDialog 
+        open={showDealDialog} 
+        onOpenChange={setShowDealDialog} 
+        onDealCreated={handleDealCreated} 
+        defaultPersonId={person.id} 
+      />
+      {person.email && (
+        <SendEmailDialog 
+          open={showEmailDialog} 
+          onOpenChange={setShowEmailDialog} 
+          onEmailSent={handleEmailSent} 
+          personId={person.id} 
+          personEmail={person.email} 
+        />
+      )}
+      <BookMeetingDialog 
+        open={showMeetingDialog} 
+        onOpenChange={setShowMeetingDialog} 
+        onMeetingBooked={handleMeetingBooked} 
+        personId={person.id} 
+      />
     </div>
   );
 }

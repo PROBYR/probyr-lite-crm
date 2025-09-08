@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings as SettingsIcon, Mail, Users, Tag, Download, Plus, Trash, Edit, BarChart3, Key } from 'lucide-react';
+import { Settings as SettingsIcon, Mail, Users, Tag, Download, Plus, Trash, Edit, BarChart3, Key, User } from 'lucide-react';
 import backend from '~backend/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ import { ApiKeyManagement } from '@/components/ApiKeyManagement';
 import { UserConnectionSettings } from '@/components/UserConnectionSettings';
 import { CompanyProfileForm } from '@/components/CompanyProfileForm';
 import { UserManagement } from '@/components/UserManagement';
+import { EmailSignatureEditor } from '@/components/EmailSignatureEditor';
 
 export function Settings() {
   const { toast } = useToast();
@@ -43,8 +44,9 @@ export function Settings() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="profile">My Profile</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="connections">My Connections</TabsTrigger>
           <TabsTrigger value="api">API Keys</TabsTrigger>
@@ -54,6 +56,10 @@ export function Settings() {
 
         <TabsContent value="general" className="space-y-6">
           <CompanyProfileForm />
+        </TabsContent>
+
+        <TabsContent value="profile" className="space-y-6">
+          <EmailSignatureEditor userId={1} />
         </TabsContent>
 
         <TabsContent value="users">

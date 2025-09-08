@@ -46,6 +46,7 @@ export class Client {
     public readonly stages: stages.ServiceClient
     public readonly tags: tags.ServiceClient
     public readonly tasks: tasks.ServiceClient
+    public readonly tracking: tracking.ServiceClient
     public readonly user_connections: user_connections.ServiceClient
     public readonly users: users.ServiceClient
     public readonly webhooks: webhooks.ServiceClient
@@ -76,6 +77,7 @@ export class Client {
         this.stages = new stages.ServiceClient(base)
         this.tags = new tags.ServiceClient(base)
         this.tasks = new tasks.ServiceClient(base)
+        this.tracking = new tracking.ServiceClient(base)
         this.user_connections = new user_connections.ServiceClient(base)
         this.users = new users.ServiceClient(base)
         this.webhooks = new webhooks.ServiceClient(base)
@@ -112,6 +114,7 @@ export interface ClientOptions {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
+import { createActivity as api_activities_create_activity_createActivity } from "~backend/activities/create_activity";
 import { listActivities as api_activities_list_activities_listActivities } from "~backend/activities/list_activities";
 
 export namespace activities {
@@ -121,7 +124,17 @@ export namespace activities {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
+            this.createActivity = this.createActivity.bind(this)
             this.listActivities = this.listActivities.bind(this)
+        }
+
+        /**
+         * Creates a new activity record.
+         */
+        public async createActivity(params: RequestType<typeof api_activities_create_activity_createActivity>): Promise<ResponseType<typeof api_activities_create_activity_createActivity>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/activities`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_activities_create_activity_createActivity>
         }
 
         /**
@@ -442,6 +455,7 @@ export namespace leads {
  */
 import { bookMeeting as api_outreach_book_meeting_bookMeeting } from "~backend/outreach/book_meeting";
 import { sendEmail as api_outreach_send_email_sendEmail } from "~backend/outreach/send_email";
+import { sendEmailWithTracking as api_outreach_send_email_with_tracking_sendEmailWithTracking } from "~backend/outreach/send_email_with_tracking";
 
 export namespace outreach {
 
@@ -452,6 +466,7 @@ export namespace outreach {
             this.baseClient = baseClient
             this.bookMeeting = this.bookMeeting.bind(this)
             this.sendEmail = this.sendEmail.bind(this)
+            this.sendEmailWithTracking = this.sendEmailWithTracking.bind(this)
         }
 
         /**
@@ -470,6 +485,15 @@ export namespace outreach {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/outreach/emails`, {method: "POST", body: JSON.stringify(params)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_outreach_send_email_sendEmail>
+        }
+
+        /**
+         * Sends an email with tracking capabilities and logs it as an activity.
+         */
+        public async sendEmailWithTracking(params: RequestType<typeof api_outreach_send_email_with_tracking_sendEmailWithTracking>): Promise<ResponseType<typeof api_outreach_send_email_with_tracking_sendEmailWithTracking>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/outreach/emails/tracked`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_outreach_send_email_with_tracking_sendEmailWithTracking>
         }
     }
 }
@@ -802,6 +826,44 @@ export namespace tasks {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
+import { trackEmailOpen as api_tracking_track_email_open_trackEmailOpen } from "~backend/tracking/track_email_open";
+import { trackLinkClick as api_tracking_track_link_click_trackLinkClick } from "~backend/tracking/track_link_click";
+
+export namespace tracking {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.trackEmailOpen = this.trackEmailOpen.bind(this)
+            this.trackLinkClick = this.trackLinkClick.bind(this)
+        }
+
+        /**
+         * Tracks when an email is opened.
+         */
+        public async trackEmailOpen(params: { trackingId: string }): Promise<void> {
+            await this.baseClient.callTypedAPI(`/track/open/${encodeURIComponent(params.trackingId)}`, {method: "GET", body: undefined})
+        }
+
+        /**
+         * Tracks when a link in an email is clicked and redirects to the original URL.
+         */
+        public async trackLinkClick(params: RequestType<typeof api_tracking_track_link_click_trackLinkClick>): Promise<void> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                url: params.url,
+            })
+
+            await this.baseClient.callTypedAPI(`/track/click/${encodeURIComponent(params.trackingId)}`, {query, method: "GET", body: undefined})
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
 import { connectCalendar as api_user_connections_calendar_connection_connectCalendar } from "~backend/user_connections/calendar_connection";
 import { connectEmail as api_user_connections_email_connection_connectEmail } from "~backend/user_connections/email_connection";
 import { getUserConnections as api_user_connections_get_user_connections_getUserConnections } from "~backend/user_connections/get_user_connections";
@@ -852,9 +914,11 @@ export namespace user_connections {
  */
 import { deactivateUsers as api_users_deactivate_users_deactivateUsers } from "~backend/users/deactivate_users";
 import { deleteUsers as api_users_delete_users_deleteUsers } from "~backend/users/delete_users";
+import { getEmailSignature as api_users_get_email_signature_getEmailSignature } from "~backend/users/get_email_signature";
 import { getUser as api_users_get_user_getUser } from "~backend/users/get_user";
 import { inviteUser as api_users_invite_inviteUser } from "~backend/users/invite";
 import { listUsers as api_users_list_users_listUsers } from "~backend/users/list_users";
+import { updateEmailSignature as api_users_update_email_signature_updateEmailSignature } from "~backend/users/update_email_signature";
 import { updateUser as api_users_update_user_updateUser } from "~backend/users/update_user";
 
 export namespace users {
@@ -866,9 +930,11 @@ export namespace users {
             this.baseClient = baseClient
             this.deactivateUsers = this.deactivateUsers.bind(this)
             this.deleteUsers = this.deleteUsers.bind(this)
+            this.getEmailSignature = this.getEmailSignature.bind(this)
             this.getUser = this.getUser.bind(this)
             this.inviteUser = this.inviteUser.bind(this)
             this.listUsers = this.listUsers.bind(this)
+            this.updateEmailSignature = this.updateEmailSignature.bind(this)
             this.updateUser = this.updateUser.bind(this)
         }
 
@@ -886,6 +952,15 @@ export namespace users {
          */
         public async deleteUsers(params: RequestType<typeof api_users_delete_users_deleteUsers>): Promise<void> {
             await this.baseClient.callTypedAPI(`/users/delete`, {method: "POST", body: JSON.stringify(params)})
+        }
+
+        /**
+         * Retrieves a user's email signature.
+         */
+        public async getEmailSignature(params: { userId: number }): Promise<ResponseType<typeof api_users_get_email_signature_getEmailSignature>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/users/${encodeURIComponent(params.userId)}/email-signature`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_users_get_email_signature_getEmailSignature>
         }
 
         /**
@@ -913,6 +988,18 @@ export namespace users {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/users`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_users_list_users_listUsers>
+        }
+
+        /**
+         * Updates a user's email signature.
+         */
+        public async updateEmailSignature(params: RequestType<typeof api_users_update_email_signature_updateEmailSignature>): Promise<void> {
+            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
+            const body: Record<string, any> = {
+                signature: params.signature,
+            }
+
+            await this.baseClient.callTypedAPI(`/users/${encodeURIComponent(params.userId)}/email-signature`, {method: "PUT", body: JSON.stringify(body)})
         }
 
         /**
