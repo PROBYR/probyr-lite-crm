@@ -198,7 +198,9 @@ export namespace api_auth {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
+import { getCompany as api_company_get_company_getCompany } from "~backend/company/get_company";
 import { listCompanies as api_company_list_companies_listCompanies } from "~backend/company/list_companies";
+import { updateCompany as api_company_update_company_updateCompany } from "~backend/company/update_company";
 
 export namespace company {
 
@@ -207,7 +209,18 @@ export namespace company {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
+            this.getCompany = this.getCompany.bind(this)
             this.listCompanies = this.listCompanies.bind(this)
+            this.updateCompany = this.updateCompany.bind(this)
+        }
+
+        /**
+         * Retrieves a single company by ID.
+         */
+        public async getCompany(params: { id: number }): Promise<ResponseType<typeof api_company_get_company_getCompany>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/companies/${encodeURIComponent(params.id)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_company_get_company_getCompany>
         }
 
         /**
@@ -217,6 +230,23 @@ export namespace company {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/companies`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_company_list_companies_listCompanies>
+        }
+
+        /**
+         * Updates company information.
+         */
+        public async updateCompany(params: RequestType<typeof api_company_update_company_updateCompany>): Promise<ResponseType<typeof api_company_update_company_updateCompany>> {
+            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
+            const body: Record<string, any> = {
+                address: params.address,
+                name:    params.name,
+                phone:   params.phone,
+                website: params.website,
+            }
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/companies/${encodeURIComponent(params.id)}`, {method: "PUT", body: JSON.stringify(body)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_company_update_company_updateCompany>
         }
     }
 }
@@ -775,7 +805,9 @@ export namespace user_connections {
 /**
  * Import the endpoint handlers to derive the types for the client.
  */
+import { deactivateUsers as api_users_deactivate_users_deactivateUsers } from "~backend/users/deactivate_users";
 import { deleteUsers as api_users_delete_users_deleteUsers } from "~backend/users/delete_users";
+import { getUser as api_users_get_user_getUser } from "~backend/users/get_user";
 import { inviteUser as api_users_invite_inviteUser } from "~backend/users/invite";
 import { listUsers as api_users_list_users_listUsers } from "~backend/users/list_users";
 import { updateUser as api_users_update_user_updateUser } from "~backend/users/update_user";
@@ -787,10 +819,21 @@ export namespace users {
 
         constructor(baseClient: BaseClient) {
             this.baseClient = baseClient
+            this.deactivateUsers = this.deactivateUsers.bind(this)
             this.deleteUsers = this.deleteUsers.bind(this)
+            this.getUser = this.getUser.bind(this)
             this.inviteUser = this.inviteUser.bind(this)
             this.listUsers = this.listUsers.bind(this)
             this.updateUser = this.updateUser.bind(this)
+        }
+
+        /**
+         * Deactivates one or more users by setting them to inactive.
+         */
+        public async deactivateUsers(params: RequestType<typeof api_users_deactivate_users_deactivateUsers>): Promise<ResponseType<typeof api_users_deactivate_users_deactivateUsers>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/users/deactivate`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_users_deactivate_users_deactivateUsers>
         }
 
         /**
@@ -798,6 +841,15 @@ export namespace users {
          */
         public async deleteUsers(params: RequestType<typeof api_users_delete_users_deleteUsers>): Promise<void> {
             await this.baseClient.callTypedAPI(`/users/delete`, {method: "POST", body: JSON.stringify(params)})
+        }
+
+        /**
+         * Retrieves a single user by ID.
+         */
+        public async getUser(params: { id: number }): Promise<ResponseType<typeof api_users_get_user_getUser>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/users/${encodeURIComponent(params.id)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_users_get_user_getUser>
         }
 
         /**

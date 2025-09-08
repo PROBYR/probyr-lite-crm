@@ -16,18 +16,11 @@ import { InviteUserDialog } from '@/components/InviteUserDialog';
 import { EditUserDialog } from '@/components/EditUserDialog';
 import { ApiKeyManagement } from '@/components/ApiKeyManagement';
 import { UserConnectionSettings } from '@/components/UserConnectionSettings';
+import { CompanyProfileForm } from '@/components/CompanyProfileForm';
+import { UserManagement } from '@/components/UserManagement';
 
 export function Settings() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
-
-  const { data: company } = useQuery({
-    queryKey: ['companies'],
-    queryFn: async () => (await backend.company.listCompanies()).companies[0],
-  });
 
   const { data: stages } = useQuery({
     queryKey: ['stages'],
@@ -39,68 +32,6 @@ export function Settings() {
     queryFn: () => backend.tags.listTags({}),
   });
 
-  const { data: usersData, refetch: refetchUsers } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => backend.users.listUsers(),
-  });
-
-  const users = useMemo(() => usersData?.users || [], [usersData]);
-  const userToEdit = useMemo(() => {
-    if (selectedUserIds.length !== 1) return null;
-    return users.find(u => u.id === selectedUserIds[0]) || null;
-  }, [selectedUserIds, users]);
-
-  const deleteMutation = useMutation({
-    mutationFn: (userIds: number[]) => backend.users.deleteUsers({ userIds }),
-    onSuccess: () => {
-      toast({ title: "Success", description: "User(s) deleted." });
-      refetchUsers();
-      setSelectedUserIds([]);
-    },
-    onError: (error) => {
-      console.error("Failed to delete users:", error);
-      toast({ title: "Error", description: "Could not delete users.", variant: "destructive" });
-    },
-  });
-
-  const handleUserInvited = () => {
-    refetchUsers();
-    toast({ title: "Success", description: "User invited successfully!" });
-  };
-
-  const handleUserUpdated = () => {
-    refetchUsers();
-    toast({ title: "Success", description: "User updated successfully!" });
-  };
-
-  const handleDeleteSelected = () => {
-    const idsToDelete = selectedUserIds.filter(id => id !== 1);
-    if (idsToDelete.length < selectedUserIds.length) {
-      toast({ title: "Info", description: "The primary admin user cannot be deleted." });
-    }
-    if (idsToDelete.length > 0) {
-      deleteMutation.mutate(idsToDelete);
-    } else {
-      setSelectedUserIds([]);
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedUserIds(users.map(u => u.id));
-    } else {
-      setSelectedUserIds([]);
-    }
-  };
-
-  const handleSelectRow = (id: number, checked: boolean) => {
-    if (checked) {
-      setSelectedUserIds(prev => [...prev, id]);
-    } else {
-      setSelectedUserIds(prev => prev.filter(userId => userId !== id));
-    }
-  };
-
   return (
     <div className="p-4 lg:p-8">
       <div className="mb-6">
@@ -111,91 +42,22 @@ export function Settings() {
         <p className="text-gray-600 mt-1">Manage your CRM configuration and preferences</p>
       </div>
 
-      <Tabs defaultValue="users" className="space-y-6">
+      <Tabs defaultValue="general" className="space-y-6">
         <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="connections">My Connections</TabsTrigger>
           <TabsTrigger value="api">API Keys</TabsTrigger>
-          <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="tags">Tags</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="general" className="space-y-6">
+          <CompanyProfileForm />
+        </TabsContent>
+
         <TabsContent value="users">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Team Management</CardTitle>
-                <div className="flex gap-2">
-                  {selectedUserIds.length > 0 && (
-                    <>
-                      <Button variant="outline" size="sm" onClick={() => setShowEditDialog(true)} disabled={selectedUserIds.length !== 1}>
-                        <Edit className="w-4 h-4 mr-2" /> Edit
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm" disabled={selectedUserIds.length === 0}>
-                            <Trash className="w-4 h-4 mr-2" /> Delete ({selectedUserIds.length})
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the selected user(s). The primary admin cannot be deleted.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteSelected}>Continue</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </>
-                  )}
-                  <Button onClick={() => setShowInviteDialog(true)}><Plus className="w-4 h-4 mr-2" />Invite User</Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectedUserIds.length === users.length && users.length > 0}
-                        onCheckedChange={handleSelectAll}
-                      />
-                    </TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map(user => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedUserIds.includes(user.id)}
-                          onCheckedChange={(checked) => handleSelectRow(user.id, !!checked)}
-                        />
-                      </TableCell>
-                      <TableCell>{user.firstName} {user.lastName}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell><Badge variant="secondary">{user.role}</Badge></TableCell>
-                      <TableCell>
-                        <Badge variant={user.isActive ? 'default' : 'outline'}>
-                          {user.isActive ? 'Active' : 'Invited'}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <UserManagement />
         </TabsContent>
 
         <TabsContent value="connections" className="space-y-6">
@@ -204,30 +66,6 @@ export function Settings() {
 
         <TabsContent value="api" className="space-y-6">
           <ApiKeyManagement />
-        </TabsContent>
-
-        <TabsContent value="general" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Company Information</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="company-name">Company Name</Label>
-                  <Input id="company-name" value={company?.name || ''} disabled />
-                </div>
-                <div>
-                  <Label htmlFor="company-website">Website</Label>
-                  <Input id="company-website" value={company?.website || ''} disabled />
-                </div>
-                <div>
-                  <Label htmlFor="company-phone">Phone</Label>
-                  <Input id="company-phone" value={company?.phone || ''} disabled />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         <TabsContent value="pipeline" className="space-y-6">
@@ -276,9 +114,6 @@ export function Settings() {
           </Card>
         </TabsContent>
       </Tabs>
-
-      <InviteUserDialog open={showInviteDialog} onOpenChange={setShowInviteDialog} onUserInvited={handleUserInvited} />
-      <EditUserDialog user={userToEdit} open={showEditDialog} onOpenChange={setShowEditDialog} onUserUpdated={handleUserUpdated} />
     </div>
   );
 }
