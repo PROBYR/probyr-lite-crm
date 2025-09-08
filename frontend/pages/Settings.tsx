@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Settings as SettingsIcon, Mail, Users, Tag, Download, Plus, Trash, Edit, BarChart3 } from 'lucide-react';
+import { Settings as SettingsIcon, Mail, Users, Tag, Download, Plus, Trash, Edit, BarChart3, Key } from 'lucide-react';
 import backend from '~backend/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/components/ui/use-toast';
 import { InviteUserDialog } from '@/components/InviteUserDialog';
 import { EditUserDialog } from '@/components/EditUserDialog';
+import { ApiKeyManagement } from '@/components/ApiKeyManagement';
+import { UserConnectionSettings } from '@/components/UserConnectionSettings';
 
 export function Settings() {
   const { toast } = useToast();
@@ -110,12 +112,13 @@ export function Settings() {
       </div>
 
       <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="connections">My Connections</TabsTrigger>
+          <TabsTrigger value="api">API Keys</TabsTrigger>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="tags">Tags</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
@@ -195,6 +198,14 @@ export function Settings() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="connections" className="space-y-6">
+          <UserConnectionSettings userId={1} />
+        </TabsContent>
+
+        <TabsContent value="api" className="space-y-6">
+          <ApiKeyManagement />
+        </TabsContent>
+
         <TabsContent value="general" className="space-y-6">
           <Card>
             <CardHeader>
@@ -261,18 +272,6 @@ export function Settings() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="integrations" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Mail className="w-5 h-5" />Company Email Settings</CardTitle>
-              <p className="text-gray-600">Configure SMTP/IMAP for your company-wide email address (e.g., sales@yourcompany.com).</p>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center text-gray-500 py-8">Email integration settings will be available here.</p>
             </CardContent>
           </Card>
         </TabsContent>

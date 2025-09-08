@@ -34,16 +34,19 @@ const BROWSER = typeof globalThis === "object" && ("window" in globalThis);
  */
 export class Client {
     public readonly activities: activities.ServiceClient
+    public readonly api_auth: api_auth.ServiceClient
     public readonly company: company.ServiceClient
     public readonly deals: deals.ServiceClient
     public readonly imports: imports.ServiceClient
     public readonly integrations: integrations.ServiceClient
+    public readonly leads: leads.ServiceClient
     public readonly outreach: outreach.ServiceClient
     public readonly people: people.ServiceClient
     public readonly pipelines: pipelines.ServiceClient
     public readonly stages: stages.ServiceClient
     public readonly tags: tags.ServiceClient
     public readonly tasks: tasks.ServiceClient
+    public readonly user_connections: user_connections.ServiceClient
     public readonly users: users.ServiceClient
     public readonly webhooks: webhooks.ServiceClient
     private readonly options: ClientOptions
@@ -61,16 +64,19 @@ export class Client {
         this.options = options ?? {}
         const base = new BaseClient(this.target, this.options)
         this.activities = new activities.ServiceClient(base)
+        this.api_auth = new api_auth.ServiceClient(base)
         this.company = new company.ServiceClient(base)
         this.deals = new deals.ServiceClient(base)
         this.imports = new imports.ServiceClient(base)
         this.integrations = new integrations.ServiceClient(base)
+        this.leads = new leads.ServiceClient(base)
         this.outreach = new outreach.ServiceClient(base)
         this.people = new people.ServiceClient(base)
         this.pipelines = new pipelines.ServiceClient(base)
         this.stages = new stages.ServiceClient(base)
         this.tags = new tags.ServiceClient(base)
         this.tasks = new tasks.ServiceClient(base)
+        this.user_connections = new user_connections.ServiceClient(base)
         this.users = new users.ServiceClient(base)
         this.webhooks = new webhooks.ServiceClient(base)
     }
@@ -134,6 +140,57 @@ export namespace activities {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/activities`, {query, method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_activities_list_activities_listActivities>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { generateApiKey as api_api_auth_generate_api_key_generateApiKey } from "~backend/api_auth/generate_api_key";
+import { listApiKeys as api_api_auth_list_api_keys_listApiKeys } from "~backend/api_auth/list_api_keys";
+import { revokeApiKey as api_api_auth_revoke_api_key_revokeApiKey } from "~backend/api_auth/revoke_api_key";
+
+export namespace api_auth {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.generateApiKey = this.generateApiKey.bind(this)
+            this.listApiKeys = this.listApiKeys.bind(this)
+            this.revokeApiKey = this.revokeApiKey.bind(this)
+        }
+
+        /**
+         * Generates a new API key for a company.
+         */
+        public async generateApiKey(params: RequestType<typeof api_api_auth_generate_api_key_generateApiKey>): Promise<ResponseType<typeof api_api_auth_generate_api_key_generateApiKey>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/api-keys`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_api_auth_generate_api_key_generateApiKey>
+        }
+
+        /**
+         * Retrieves all API keys for a company.
+         */
+        public async listApiKeys(params: RequestType<typeof api_api_auth_list_api_keys_listApiKeys>): Promise<ResponseType<typeof api_api_auth_list_api_keys_listApiKeys>> {
+            // Convert our params into the objects we need for the request
+            const query = makeRecord<string, string | string[]>({
+                companyId: params.companyId === undefined ? undefined : String(params.companyId),
+            })
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/api-keys`, {query, method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_api_auth_list_api_keys_listApiKeys>
+        }
+
+        /**
+         * Revokes an API key by setting it to inactive.
+         */
+        public async revokeApiKey(params: { id: number }): Promise<void> {
+            await this.baseClient.callTypedAPI(`/api-keys/${encodeURIComponent(params.id)}`, {method: "DELETE", body: undefined})
         }
     }
 }
@@ -305,6 +362,47 @@ export namespace integrations {
          */
         public async updateEmailSettings(params: RequestType<typeof api_integrations_update_email_settings_updateEmailSettings>): Promise<void> {
             await this.baseClient.callTypedAPI(`/integrations/email`, {method: "POST", body: JSON.stringify(params)})
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { createFromSource as api_leads_create_from_source_createFromSource } from "~backend/leads/create_from_source";
+
+export namespace leads {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.createFromSource = this.createFromSource.bind(this)
+        }
+
+        /**
+         * Creates a lead from an external source like ProByr Outreach Pro.
+         */
+        public async createFromSource(params: RequestType<typeof api_leads_create_from_source_createFromSource>): Promise<ResponseType<typeof api_leads_create_from_source_createFromSource>> {
+            // Convert our params into the objects we need for the request
+            const headers = makeRecord<string, string>({
+                authorization: params.authorization,
+            })
+
+            // Construct the body with only the fields which we want encoded within the body (excluding query string or header fields)
+            const body: Record<string, any> = {
+                company:           params.company,
+                deal:              params.deal,
+                initialNote:       params.initialNote,
+                prospect:          params.prospect,
+                sourceApplication: params.sourceApplication,
+                sourceIdentifier:  params.sourceIdentifier,
+            }
+
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/api/v1/leads/create-from-source`, {headers, method: "POST", body: JSON.stringify(body)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_leads_create_from_source_createFromSource>
         }
     }
 }
@@ -622,6 +720,54 @@ export namespace tasks {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/tasks/${encodeURIComponent(params.id)}`, {method: "PUT", body: JSON.stringify(body)})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_tasks_update_task_updateTask>
+        }
+    }
+}
+
+/**
+ * Import the endpoint handlers to derive the types for the client.
+ */
+import { connectCalendar as api_user_connections_calendar_connection_connectCalendar } from "~backend/user_connections/calendar_connection";
+import { connectEmail as api_user_connections_email_connection_connectEmail } from "~backend/user_connections/email_connection";
+import { getUserConnections as api_user_connections_get_user_connections_getUserConnections } from "~backend/user_connections/get_user_connections";
+
+export namespace user_connections {
+
+    export class ServiceClient {
+        private baseClient: BaseClient
+
+        constructor(baseClient: BaseClient) {
+            this.baseClient = baseClient
+            this.connectCalendar = this.connectCalendar.bind(this)
+            this.connectEmail = this.connectEmail.bind(this)
+            this.getUserConnections = this.getUserConnections.bind(this)
+        }
+
+        /**
+         * Connects a user's calendar account.
+         */
+        public async connectCalendar(params: RequestType<typeof api_user_connections_calendar_connection_connectCalendar>): Promise<ResponseType<typeof api_user_connections_calendar_connection_connectCalendar>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/user-connections/calendar`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_user_connections_calendar_connection_connectCalendar>
+        }
+
+        /**
+         * Connects a user's email account.
+         */
+        public async connectEmail(params: RequestType<typeof api_user_connections_email_connection_connectEmail>): Promise<ResponseType<typeof api_user_connections_email_connection_connectEmail>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/user-connections/email`, {method: "POST", body: JSON.stringify(params)})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_user_connections_email_connection_connectEmail>
+        }
+
+        /**
+         * Retrieves a user's email and calendar connections.
+         */
+        public async getUserConnections(params: { userId: number }): Promise<ResponseType<typeof api_user_connections_get_user_connections_getUserConnections>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/user-connections/${encodeURIComponent(params.userId)}`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_user_connections_get_user_connections_getUserConnections>
         }
     }
 }
