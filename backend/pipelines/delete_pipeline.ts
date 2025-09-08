@@ -22,18 +22,18 @@ export const deletePipeline = api<DeletePipelineParams, void>(
       }
 
       // Check if pipeline has any deals
-      const dealCount = await tx.queryRow<{ count: number }>`
+      const dealCountResult = await tx.queryRow<{ count: string }>`
         SELECT COUNT(*) as count
         FROM deals d
         JOIN deal_stages ds ON d.stage_id = ds.id
         WHERE ds.pipeline_id = ${params.id}
       `;
 
-      if (dealCount && dealCount.count > 0) {
+      if (dealCountResult && parseInt(dealCountResult.count) > 0) {
         throw APIError.failedPrecondition("This pipeline cannot be deleted because it contains active deals. Please move or delete the deals first.");
       }
 
-      // Delete stages first (cascade)
+      // Delete stages first
       await tx.exec`
         DELETE FROM deal_stages WHERE pipeline_id = ${params.id}
       `;

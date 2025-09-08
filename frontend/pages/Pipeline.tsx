@@ -241,7 +241,12 @@ export function Pipeline() {
         />
       )}
 
-      <CreateDealDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} onDealCreated={handleDealCreated} />
+      <CreateDealDialog 
+        open={showCreateDialog} 
+        onOpenChange={setShowCreateDialog} 
+        onDealCreated={handleDealCreated} 
+        defaultPipelineId={selectedPipelineId}
+      />
     </div>
   );
 }

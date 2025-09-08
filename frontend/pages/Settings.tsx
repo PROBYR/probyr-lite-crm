@@ -34,11 +34,6 @@ export function Settings() {
     queryFn: () => backend.pipelines.list(),
   });
 
-  const { data: stages } = useQuery({
-    queryKey: ['stages'],
-    queryFn: () => backend.stages.listStages({}),
-  });
-
   const { data: tags } = useQuery({
     queryKey: ['tags'],
     queryFn: () => backend.tags.listTags({}),

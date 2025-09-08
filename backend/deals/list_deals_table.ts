@@ -145,7 +145,7 @@ export const listDealsTable = api<ListDealsTableParams, ListDealsTableResponse>(
         WHERE ds.pipeline_id = $1
       `;
       
-      const countResult = await crmDB.rawQueryRow<{ total: number }>(countQuery, pipelineId);
+      const countResult = await crmDB.rawQueryRow<{ total: string }>(countQuery, pipelineId);
       const total = Number(countResult?.total || 0);
 
       const deals: DealTableRow[] = rows.map(row => ({

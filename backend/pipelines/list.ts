@@ -43,8 +43,8 @@ export const list = api<void, ListPipelinesResponse>(
         company_id: number;
         created_at: Date;
         updated_at: Date;
-        stage_count: number;
-        deal_count: number;
+        stage_count: string;
+        deal_count: string;
       }>(query);
 
       const pipelines: Pipeline[] = rows.map(row => ({
@@ -53,8 +53,8 @@ export const list = api<void, ListPipelinesResponse>(
         companyId: row.company_id,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
-        stageCount: Number(row.stage_count),
-        dealCount: Number(row.deal_count),
+        stageCount: parseInt(row.stage_count),
+        dealCount: parseInt(row.deal_count),
       }));
 
       return { pipelines };
