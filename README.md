@@ -1,0 +1,1 @@
+A simple, intuitive, and collaborative Customer Relationship Management (CRM) tool specifically designed for Small and Medium-sized Enterprises (SMEs). This CRM will empower teams to manage customer relationships, track sales pipelines, and stay organized without technological friction. It is part of a larger suite of SME AI Assisted tools.
