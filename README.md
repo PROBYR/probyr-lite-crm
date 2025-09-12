@@ -5,15 +5,23 @@ A simple, intuitive, and collaborative Customer Relationship Management (CRM) to
 ## Features
 
 - **Dashboard**: Real-time overview of CRM metrics and activities
-- **Companies**: Manage company profiles with contact details
-- **Contacts**: Track individual contacts within companies
+- **Company Management**: 
+  - Comprehensive company profiles with industry, size, revenue tracking
+  - Company-contact associations with role management
+  - Bulk operations (select, delete, export to CSV)
+  - Advanced search and filtering capabilities
+- **Contact Management**: 
+  - Individual contact tracking with detailed profiles
+  - Contact selection, bulk operations, and CSV export
+  - Email, phone, and company association management
+- **Deals Management**: 
+  - Deal pipeline tracking with stages and probability
+  - Company and contact association for deals
+  - Value tracking and expected close dates
 - **CRM Pipeline**: Visual pipeline management for sales tracking
-- **CRM Inbox**: Centralized communication hub
-- **Mailboxes**: Email management integration
-- **Approvals**: Workflow approval system
-- **Analytics**: Business intelligence and reporting
-- **Settings**: Application configuration
-- **Integrations**: Third-party service connections
+- **Data Import/Export**: CSV import and export capabilities
+- **Settings & Configuration**: Application and user preferences
+- **API Integration**: RESTful API for external integrations
 
 ## Production Deployment with Docker
 

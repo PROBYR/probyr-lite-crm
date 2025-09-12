@@ -21,10 +21,13 @@
     "better-sqlite3": "^12.2.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "papaparse": "^5.5.3",
     "sqlite3": "^5.1.7",
     "ws": "^8.18.3"
   },
   "devDependencies": {
+    "@types/papaparse": "^5.3.16",
     "concurrently": "^9.2.1",
     "nodemon": "^3.1.10"
   }
