@@ -64,7 +64,7 @@ db.exec(`
     value DECIMAL(12,2) DEFAULT 0,
     contact_id INTEGER,
     company_id INTEGER,
-    stage TEXT DEFAULT 'Lead',
+    stage TEXT DEFAULT 'Pipeline',
     probability INTEGER DEFAULT 0,
     expected_close_date DATE,
     actual_close_date DATE,
@@ -317,7 +317,7 @@ export const dbOps = {
     create: (data) => {
       const result = statements.insertDeal.run(
         data.name, data.description || null, data.value || 0, data.contact_id || null,
-        data.company_id || null, data.stage || 'Lead', data.probability || 0,
+        data.company_id || null, data.stage || 'Pipeline', data.probability || 0,
         data.expected_close_date || null, data.lead_source || null,
         data.pipeline || 'Sales Pipeline', data.owner || 'system', data.notes || null
       );
@@ -331,7 +331,7 @@ export const dbOps = {
     update: (id, data) => {
       statements.updateDeal.run(
         data.name, data.description || null, data.value || 0, data.contact_id || null,
-        data.company_id || null, data.stage || 'Lead', data.probability || 0,
+        data.company_id || null, data.stage || 'Pipeline', data.probability || 0,
         data.expected_close_date || null, data.actual_close_date || null,
         data.lead_source || null, data.pipeline || 'Sales Pipeline',
         data.owner || 'system', data.notes || null, id

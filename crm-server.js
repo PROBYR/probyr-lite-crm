@@ -389,6 +389,143 @@ function generateHTML(currentTab = 'dashboard') {
             margin-bottom: 1.5rem;
             color: #333;
         }
+
+        .deal-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .board-column {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            min-height: 400px;
+        }
+
+        .board-column h4 {
+            text-align: center;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .board-column.pipeline h4 {
+            background: #6c757d;
+        }
+
+        .board-column.upside h4 {
+            background: #ffc107;
+        }
+
+        .board-column.commit h4 {
+            background: #fd7e14;
+        }
+
+        .board-column.won h4 {
+            background: #28a745;
+        }
+
+        .deal-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .deal-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .deal-card h5 {
+            margin: 0 0 0.5rem 0;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .deal-value {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .deal-meta {
+            font-size: 0.8rem;
+            color: #666;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .deal-contact {
+            font-weight: 500;
+        }
+
+        .empty-column {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            margin-top: 2rem;
+        }
+
+
+        @media (max-width: 1200px) {
+            .deal-board {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .deal-board {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
@@ -405,7 +542,6 @@ function generateHTML(currentTab = 'dashboard') {
                 <a href="/?tab=contacts" class="nav-tab ${currentTab === 'contacts' ? 'active' : ''}">👥 Contacts</a>
                 <a href="/?tab=companies" class="nav-tab ${currentTab === 'companies' ? 'active' : ''}">🏢 Companies</a>
                 <a href="/?tab=deals" class="nav-tab ${currentTab === 'deals' ? 'active' : ''}">💰 Deals</a>
-                <a href="/?tab=activities" class="nav-tab ${currentTab === 'activities' ? 'active' : ''}">📋 Activities</a>
             </div>
         </div>
 
@@ -429,6 +565,72 @@ function generateHTML(currentTab = 'dashboard') {
                     <div class="stat-card">
                         <span class="stat-number">$${(stats.total_revenue || 0).toLocaleString()}</span>
                         <div class="stat-label">Total Revenue</div>
+                    </div>
+                </div>
+
+                <!-- Deal Board -->
+                <div style="margin-top: 2rem;">
+                    <h3>Deal Pipeline Board</h3>
+                    <div class="deal-board">
+                        <div class="board-column pipeline">
+                            <h4>Pipeline</h4>
+                            ${deals.filter(deal => deal.stage === 'Pipeline').map(deal => `
+                                <div class="deal-card">
+                                    <h5>${deal.name}</h5>
+                                    <div class="deal-value">$${(deal.value || 0).toLocaleString()}</div>
+                                    <div class="deal-meta">
+                                        ${deal.contact_name ? `<span class="deal-contact">👤 ${deal.contact_name}</span>` : ''}
+                                        ${deal.company_name ? `<span>🏢 ${deal.company_name}</span>` : ''}
+                                        ${deal.expected_close_date ? `<span>📅 ${new Date(deal.expected_close_date).toLocaleDateString()}</span>` : ''}
+                                    </div>
+                                </div>
+                            `).join('') || '<div class="empty-column">No deals in pipeline</div>'}
+                        </div>
+
+                        <div class="board-column upside">
+                            <h4>Upside</h4>
+                            ${deals.filter(deal => deal.stage === 'Upside').map(deal => `
+                                <div class="deal-card">
+                                    <h5>${deal.name}</h5>
+                                    <div class="deal-value">$${(deal.value || 0).toLocaleString()}</div>
+                                    <div class="deal-meta">
+                                        ${deal.contact_name ? `<span class="deal-contact">👤 ${deal.contact_name}</span>` : ''}
+                                        ${deal.company_name ? `<span>🏢 ${deal.company_name}</span>` : ''}
+                                        ${deal.expected_close_date ? `<span>📅 ${new Date(deal.expected_close_date).toLocaleDateString()}</span>` : ''}
+                                    </div>
+                                </div>
+                            `).join('') || '<div class="empty-column">No upside deals</div>'}
+                        </div>
+
+                        <div class="board-column commit">
+                            <h4>Commit</h4>
+                            ${deals.filter(deal => deal.stage === 'Commit').map(deal => `
+                                <div class="deal-card">
+                                    <h5>${deal.name}</h5>
+                                    <div class="deal-value">$${(deal.value || 0).toLocaleString()}</div>
+                                    <div class="deal-meta">
+                                        ${deal.contact_name ? `<span class="deal-contact">👤 ${deal.contact_name}</span>` : ''}
+                                        ${deal.company_name ? `<span>🏢 ${deal.company_name}</span>` : ''}
+                                        ${deal.expected_close_date ? `<span>📅 ${new Date(deal.expected_close_date).toLocaleDateString()}</span>` : ''}
+                                    </div>
+                                </div>
+                            `).join('') || '<div class="empty-column">No commit deals</div>'}
+                        </div>
+
+                        <div class="board-column won">
+                            <h4>Won</h4>
+                            ${deals.filter(deal => deal.stage === 'Won').map(deal => `
+                                <div class="deal-card">
+                                    <h5>${deal.name}</h5>
+                                    <div class="deal-value">$${(deal.value || 0).toLocaleString()}</div>
+                                    <div class="deal-meta">
+                                        ${deal.contact_name ? `<span class="deal-contact">👤 ${deal.contact_name}</span>` : ''}
+                                        ${deal.company_name ? `<span>🏢 ${deal.company_name}</span>` : ''}
+                                        ${deal.actual_close_date ? `<span>🎉 ${new Date(deal.actual_close_date).toLocaleDateString()}</span>` : ''}
+                                    </div>
+                                </div>
+                            `).join('') || '<div class="empty-column">No won deals yet</div>'}
+                        </div>
                     </div>
                 </div>
                 
@@ -648,12 +850,10 @@ function generateHTML(currentTab = 'dashboard') {
                             <div class="form-group">
                                 <label>Stage</label>
                                 <select name="stage" class="form-control">
-                                    <option value="Lead">Lead</option>
-                                    <option value="Qualified">Qualified</option>
-                                    <option value="Proposal">Proposal</option>
-                                    <option value="Negotiation">Negotiation</option>
-                                    <option value="Closed Won">Closed Won</option>
-                                    <option value="Closed Lost">Closed Lost</option>
+                                    <option value="Pipeline">Pipeline</option>
+                                    <option value="Upside">Upside</option>
+                                    <option value="Commit">Commit</option>
+                                    <option value="Won">Won</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -675,6 +875,7 @@ function generateHTML(currentTab = 'dashboard') {
                         <p>Start tracking your sales opportunities by adding deals.</p>
                     </div>
                 ` : `
+                    <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: #333;">All Deals</h3>
                     <table class="table">
                         <thead>
                             <tr>
@@ -690,12 +891,10 @@ function generateHTML(currentTab = 'dashboard') {
                         <tbody>
                             ${deals.map(deal => {
                                 const stageColors = {
-                                    'Lead': '#ffc107',
-                                    'Qualified': '#17a2b8',
-                                    'Proposal': '#007bff',
-                                    'Negotiation': '#fd7e14',
-                                    'Closed Won': '#28a745',
-                                    'Closed Lost': '#dc3545'
+                                    'Pipeline': '#6c757d',
+                                    'Upside': '#ffc107',
+                                    'Commit': '#fd7e14',
+                                    'Won': '#28a745'
                                 };
                                 return `
                                     <tr>
@@ -706,6 +905,7 @@ function generateHTML(currentTab = 'dashboard') {
                                         <td><span style="padding: 0.25rem 0.5rem; border-radius: 4px; background: ${stageColors[deal.stage]}20; color: ${stageColors[deal.stage]}; font-size: 0.8rem;">${deal.stage}</span></td>
                                         <td>${deal.expected_close_date ? new Date(deal.expected_close_date).toLocaleDateString() : '-'}</td>
                                         <td>
+                                            <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin-right: 0.5rem;" onclick="openEditDealModal(${deal.id}, '${deal.name.replace(/'/g, "\\'")}', '${deal.description ? deal.description.replace(/'/g, "\\'") : ''}', ${deal.value || 0}, ${deal.contact_id || 'null'}, ${deal.company_id || 'null'}, '${deal.stage}', '${deal.expected_close_date || ''}', '${deal.notes ? deal.notes.replace(/'/g, "\\'") : ''}')">Edit</button>
                                             <form method="POST" action="/delete-deal" style="display: inline;">
                                                 <input type="hidden" name="id" value="${deal.id}">
                                                 <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="return confirm('Are you sure?')">Delete</button>
@@ -719,102 +919,99 @@ function generateHTML(currentTab = 'dashboard') {
                 `}
             </div>
 
-            <!-- Activities Tab -->
-            <div id="activities" class="tab-pane ${currentTab === 'activities' ? 'active' : ''}">
-                <h2>Activities & Tasks</h2>
-                
-                <div class="add-form">
-                    <h3>Add New Activity</h3>
-                    <form method="POST" action="/add-activity">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Activity Type *</label>
-                                <select name="type" class="form-control" required>
-                                    <option value="">Select Type</option>
-                                    <option value="Call">Call</option>
-                                    <option value="Email">Email</option>
-                                    <option value="Meeting">Meeting</option>
-                                    <option value="Task">Task</option>
-                                    <option value="Note">Note</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Subject *</label>
-                                <input type="text" name="subject" class="form-control" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Contact</label>
-                                <select name="contact_id" class="form-control">
-                                    <option value="">Select Contact</option>
-                                    ${contacts.map(contact => `<option value="${contact.id}">${contact.name}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Deal</label>
-                                <select name="deal_id" class="form-control">
-                                    <option value="">Select Deal</option>
-                                    ${deals.map(deal => `<option value="${deal.id}">${deal.name}</option>`).join('')}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Due Date</label>
-                            <input type="datetime-local" name="due_date" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea name="description" class="form-control" rows="3"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Add Activity</button>
-                    </form>
-                </div>
-
-                ${activities.length === 0 ? `
-                    <div class="empty-state">
-                        <h3>No activities yet</h3>
-                        <p>Track your tasks and activities to stay organized.</p>
-                    </div>
-                ` : `
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Subject</th>
-                                <th>Contact</th>
-                                <th>Deal</th>
-                                <th>Due Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${activities.map(activity => {
-                                const statusColor = activity.status === 'completed' ? '#28a745' : '#ffc107';
-                                return `
-                                    <tr>
-                                        <td><strong>${activity.type}</strong></td>
-                                        <td>${activity.subject}</td>
-                                        <td>${activity.contact_name || '-'}</td>
-                                        <td>${activity.deal_name || '-'}</td>
-                                        <td>${activity.due_date ? new Date(activity.due_date).toLocaleString() : '-'}</td>
-                                        <td><span style="padding: 0.25rem 0.5rem; border-radius: 4px; background: ${statusColor}20; color: ${statusColor}; font-size: 0.8rem;">${activity.status}</span></td>
-                                        <td>
-                                            <form method="POST" action="/delete-activity" style="display: inline;">
-                                                <input type="hidden" name="id" value="${activity.id}">
-                                                <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="return confirm('Are you sure?')">Delete</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                `}
-            </div>
         </div>
     </div>
+
+    <!-- Edit Deal Modal -->
+    <div id="editDealModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditDealModal()">&times;</span>
+            <h3>Edit Deal</h3>
+            <form method="POST" action="/update-deal" id="editDealForm">
+                <input type="hidden" name="id" id="editDealId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Deal Name *</label>
+                        <input type="text" name="name" id="editDealName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Value</label>
+                        <input type="number" name="value" id="editDealValue" class="form-control" step="0.01" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" id="editDealDescription" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Contact</label>
+                        <select name="contact_id" id="editDealContact" class="form-control">
+                            <option value="">Select Contact</option>
+                            ${contacts.map(contact => `<option value="${contact.id}">${contact.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Company</label>
+                        <select name="company_id" id="editDealCompany" class="form-control">
+                            <option value="">Select Company</option>
+                            ${companies.map(company => `<option value="${company.id}">${company.name}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Stage</label>
+                        <select name="stage" id="editDealStage" class="form-control">
+                            <option value="Pipeline">Pipeline</option>
+                            <option value="Upside">Upside</option>
+                            <option value="Commit">Commit</option>
+                            <option value="Won">Won</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Expected Close Date</label>
+                        <input type="date" name="expected_close_date" id="editDealCloseDate" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea name="notes" id="editDealNotes" class="form-control" rows="3"></textarea>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary">Update Deal</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditDealModal()" style="margin-left: 10px;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openEditDealModal(id, name, description, value, contactId, companyId, stage, closeDate, notes) {
+            document.getElementById('editDealId').value = id;
+            document.getElementById('editDealName').value = name;
+            document.getElementById('editDealDescription').value = description || '';
+            document.getElementById('editDealValue').value = value || '';
+            document.getElementById('editDealContact').value = contactId || '';
+            document.getElementById('editDealCompany').value = companyId || '';
+            document.getElementById('editDealStage').value = stage;
+            document.getElementById('editDealCloseDate').value = closeDate || '';
+            document.getElementById('editDealNotes').value = notes || '';
+            document.getElementById('editDealModal').style.display = 'block';
+        }
+
+        function closeEditDealModal() {
+            document.getElementById('editDealModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('editDealModal');
+            if (event.target === modal) {
+                closeEditDealModal();
+            }
+        }
+    </script>
 </body>
 </html>`;
 }
@@ -852,6 +1049,17 @@ app.post('/add-deal', (req, res) => {
         res.redirect('/?tab=deals');
     } catch (error) {
         console.error('Error adding deal:', error);
+        res.redirect('/?tab=deals');
+    }
+});
+
+app.post('/update-deal', (req, res) => {
+    try {
+        const { id, ...updateData } = req.body;
+        dbOps.deal.update(id, updateData);
+        res.redirect('/?tab=deals');
+    } catch (error) {
+        console.error('Error updating deal:', error);
         res.redirect('/?tab=deals');
     }
 });
