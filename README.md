@@ -1,116 +1,239 @@
-# ProByr Enterprise CRM
+# ProByr CRM
 
-A **comprehensive, modern Customer Relationship Management (CRM) system** built for Small and Medium-sized Enterprises (SMEs). This enterprise-grade CRM provides complete sales pipeline management, advanced analytics, and seamless relationship tracking in a single, powerful application.
+A modern, full-stack Customer Relationship Management (CRM) system built with Encore.ts and React.
 
-## 🚀 Enterprise Features
+## Features
 
-### 📊 **Advanced CRM Pipeline Management**
-- **Deal/Opportunity Tracking**: Complete sales pipeline from Lead → Qualified → Proposal → Negotiation → Closed Won/Lost
-- **Pipeline Analytics**: Real-time deal progression, conversion rates, and pipeline health metrics
-- **Deal Stages Configuration**: Customizable pipeline stages with probabilities and win/loss tracking
-- **Revenue Forecasting**: Pipeline value tracking with expected close dates and probability weighting
+### 🏢 Contact & Company Management
+- Complete contact database with tagging system
+- Company profiles with contact relationships
+- Bulk operations for contact management
+- CSV import/export functionality
 
-### 🏢 **360° Customer Management**
-- **Company Profiles**: Comprehensive company data with industry, size, revenue, and relationship history
-- **Contact Management**: Full contact lifecycle with roles, relationships, and interaction history
-- **Deal-Contact Associations**: Many-to-many relationships with role management (Decision Maker, Influencer, Champion)
-- **Account Hierarchies**: Complete company-contact-deal relationship mapping
+### 🎯 Sales Pipeline
+- Customizable sales pipelines with drag-and-drop
+- Kanban and table views
+- Deal tracking with value calculations
+- Pipeline analytics and reporting
 
-### 📈 **Real-Time Analytics & Reporting**
-- **Executive Dashboard**: KPIs, pipeline health, deal progression, and performance metrics
-- **Sales Analytics**: Monthly trends, top performing companies, conversion rates
-- **Activity Analytics**: Communication tracking, meeting history, and engagement metrics
-- **Custom Reporting**: Flexible data export and analysis capabilities
+### ✅ Task Management
+- Personal task dashboard
+- Task assignment and due dates
+- Integration with contacts and deals
+- Overdue and upcoming task tracking
 
-### 🎯 **Advanced CRM Features**
-- **Activity Timeline**: Complete audit trail of all customer interactions (calls, meetings, emails)
-- **Task & Calendar Management**: Integrated scheduling with CRM entity associations
-- **Notes & Communications**: Entity-based note system with privacy controls
-- **Email Templates**: Pre-built communication workflows for consistent messaging
-- **Lead Scoring**: Automated lead qualification and prioritization system
-- **Tags & Categorization**: Flexible tagging system for custom organization
+### 📧 Email Integration
+- Send tracked emails directly from CRM
+- Email open and click tracking
+- Personal email account connections (Gmail, Outlook, SMTP)
+- Automatic email signatures
 
-### 🔗 **Modern CRM Associations**
-- **Companies ↔ Contacts**: One-to-many with role management
-- **Companies ↔ Deals**: Deal ownership and account management
-- **Deals ↔ Contacts**: Multi-contact deal associations with stakeholder roles
-- **Activities ↔ All Entities**: Universal activity tracking across companies, contacts, and deals
-- **Calendar Events ↔ CRM**: Integrated meeting scheduling tied to deals and contacts
+### 📅 Meeting Scheduling
+- Book meetings with contacts
+- Calendar integration support
+- Activity timeline tracking
 
-## 🏗️ **Technical Architecture**
+### 🔧 Advanced Features
+- API key management with granular permissions
+- User management and role-based access
+- Third-party integrations via REST API
+- Real-time email validation
+- Import wizard with field mapping
 
-### Database Schema
-- **Deals Pipeline**: Complete opportunity management with stages, probabilities, and forecasting
-- **CRM Activities**: Universal activity tracking system
-- **Deal Stages**: Configurable pipeline management
-- **Deal-Contact Relations**: Many-to-many associations with roles
-- **Notes & Tags**: Flexible annotation system
-- **Calendar Integration**: Event scheduling with CRM associations
-- **Email Templates**: Communication workflow management
-- **Lead Scoring Rules**: Automated qualification system
-- **Analytics Snapshots**: Historical reporting data
+## Tech Stack
 
-### API Architecture
-- **RESTful APIs**: Complete CRUD operations for all CRM entities
-- **Advanced Endpoints**: `/api/deals`, `/api/activities`, `/api/analytics/dashboard`
-- **Relationship Management**: Deal-contact associations, activity tracking
-- **Real-time Analytics**: Live pipeline metrics and reporting
-- **Integration Ready**: Webhook support and external API compatibility
+### Backend (Encore.ts)
+- **Framework**: Encore.ts with TypeScript
+- **Database**: PostgreSQL with SQL migrations
+- **API**: Type-safe REST APIs with automatic validation
+- **Infrastructure**: Built-in support for databases, secrets, and more
 
-## 🚀 Deployment
+### Frontend (React)
+- **Framework**: React 18 with TypeScript
+- **Styling**: Tailwind CSS v4
+- **UI Components**: shadcn/ui component library
+- **State Management**: TanStack Query for server state
+- **Routing**: React Router
+- **Build Tool**: Vite
 
-This application is designed to be deployed using Docker.
+## Getting Started
 
 ### Prerequisites
-- Docker
-- Docker Compose
+- Node.js 18 or later
+- Encore CLI (`npm install -g @encore/cli`)
 
-### Steps
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/Hudi-Cares/probyr-lite-crm.git
-    cd probyr-lite-crm
-    ```
-2.  **Run the application:**
-    ```bash
-    docker-compose up -d
-    ```
-3.  **Access the application:**
-    Open your browser and navigate to `http://localhost:8061`.
+### Installation
 
-## 🎯 **CRM Best Practices Implemented**
+1. **Clone the repository**:
+```bash
+git clone https://github.com/YOUR_USERNAME/probyr-crm.git
+cd probyr-crm
+```
 
-1. **Complete Deal Lifecycle Management**
-2. **360° Customer Relationship View**
-3. **Activity-Based Selling Process**
-4. **Pipeline Health Monitoring**
-5. **Lead Qualification System**
-6. **Customer Communication Workflows**
-7. **Sales Performance Analytics**
-8. **Relationship Mapping & Role Management**
+2. **Install dependencies**:
+```bash
+npm install
+```
 
-## 🔧 **Enterprise Technical Stack**
+3. **Start the development environment**:
+```bash
+encore run
+```
 
-- **Backend**: Node.js 18+ with Express.js
-- **Database**: SQLite with better-sqlite3 (production-ready)
-- **Frontend**: Modern Vanilla JavaScript with responsive design
-- **Containerization**: Docker & Docker Compose
-- **Architecture**: Microservices-ready single-file application
-- **API**: RESTful with comprehensive endpoint coverage
-- **Analytics**: Real-time dashboard with historical reporting
-- **Security**: Production-ready security headers and validation
+This will start both the backend API server and the frontend development server.
 
-## 📊 **Real-Time CRM Metrics**
+4. **Access the application**:
+- Frontend: http://localhost:4000
+- API Explorer: http://localhost:9400
 
-The system tracks comprehensive CRM metrics:
+### Database Setup
 
-- **Pipeline Value**: Total and weighted pipeline values
-- **Deal Conversion**: Stage-by-stage conversion rates  
-- **Activity Volume**: Communication and meeting tracking
-- **Customer Engagement**: Interaction frequency and quality
-- **Sales Velocity**: Time-to-close and deal acceleration metrics
-- **Territory Performance**: Account and rep performance tracking
+The database schema is automatically created when you first run the application. The system includes:
 
----
+- **Demo data**: Pre-populated with sample contacts, companies, and deals
+- **Migrations**: All database schema changes are managed through SQL migration files
+- **Seed data**: Realistic demo data for immediate testing
 
-**ProByr Enterprise CRM** - *Empowering SMEs with enterprise-grade customer relationship management*
+## Project Structure
+
+```
+probyr-crm/
+├── backend/                 # Encore.ts backend services
+│   ├── activities/         # Activity tracking service
+│   ├── company/           # Company management service
+│   ├── deals/             # Deal pipeline service
+│   ├── people/            # Contact management service
+│   ├── tasks/             # Task management service
+│   ├── outreach/          # Email and meeting service
+│   ├── user_connections/  # Personal integrations service
+│   ├── api_auth/          # API key management service
+│   ├── third_party/       # External API endpoints
+│   └── db/                # Database migrations and setup
+├── frontend/               # React frontend application
+│   ├── components/        # Reusable UI components
+│   ├── pages/             # Page components
+│   └── lib/               # Utility functions
+└── README.md
+```
+
+## API Documentation
+
+The CRM provides a comprehensive REST API for third-party integrations:
+
+### Authentication
+All API endpoints require an API key passed in the Authorization header:
+```
+Authorization: Bearer pbr_your_api_key_here
+```
+
+### Key Endpoints
+
+**Create Lead**:
+```bash
+POST /api/v1/leads
+Content-Type: application/json
+
+{
+  "contact": {
+    "fullName": "John Smith",
+    "email": "john@example.com",
+    "companyName": "Example Corp"
+  },
+  "deal": {
+    "dealName": "Enterprise License",
+    "value": 50000,
+    "pipelineName": "Sales Pipeline",
+    "stageName": "Lead"
+  },
+  "note": {
+    "content": "Interested in enterprise features"
+  }
+}
+```
+
+**Get Contacts**:
+```bash
+GET /api/v1/contacts?limit=50&offset=0
+```
+
+### Permissions System
+API keys support granular permissions:
+- `leads:create` - Create new leads and contacts
+- `contacts:read` - Read contact information
+- Additional permissions available in the UI
+
+## Configuration
+
+### Email Integration
+1. Go to Settings → My Connections
+2. Connect your email account (Gmail, Outlook, or SMTP)
+3. Configure email signature if desired
+
+### API Keys
+1. Go to Settings → API Keys
+2. Generate new API key with required permissions
+3. Use the key for third-party integrations
+
+### Pipeline Setup
+1. Go to Settings → Pipelines
+2. Create custom pipelines for different sales processes
+3. Configure stages with win/loss indicators
+
+## Deployment
+
+The application is designed to be deployed using Encore's built-in deployment system:
+
+```bash
+git add .
+git commit -m "Deploy to production"
+git push encore main
+```
+
+For other deployment options, refer to the [Encore.ts deployment documentation](https://encore.dev/docs/deploy).
+
+## Development
+
+### Adding New Features
+
+1. **Backend Services**: Create new services in the `backend/` directory
+2. **Database Changes**: Add new migration files in `backend/db/migrations/`
+3. **Frontend Components**: Add components in `frontend/components/`
+4. **API Integration**: Use the auto-generated backend client from `~backend/client`
+
+### Testing
+
+Run the test suite:
+```bash
+npm test
+```
+
+The project includes:
+- End-to-end tests with Playwright
+- Component tests for critical UI flows
+- API integration tests
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For questions and support:
+- Open an issue on GitHub
+- Check the [Encore.ts documentation](https://encore.dev/docs)
+- Review the in-app help and tooltips
+
+## Acknowledgments
+
+- Built with [Encore.ts](https://encore.dev) - The Backend Development Platform
+- UI components from [shadcn/ui](https://ui.shadcn.com)
+- Icons from [Lucide React](https://lucide.dev)
+- Styled with [Tailwind CSS](https://tailwindcss.com)
