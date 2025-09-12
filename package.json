@@ -8,11 +8,12 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "bun run simple-server.js",
-    "start": "bun run simple-server.js",
+    "dev": "node crm-server.js",
+    "start": "node crm-server.js",
+    "sqlite": "node crm-server.js",
+    "old-simple": "bun run simple-server.js",
     "old-server": "bun run server.js",
-    "deploy": "nodemon simple-crm.js",
-    "simple": "node simple-crm.js"
+    "deploy": "nodemon simple-crm.js"
   },
   "dependencies": {
     "@types/node": "^24.3.1",

@@ -1,0 +1,914 @@
+import express from 'express';
+import { dbOps } from './database.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = process.env.PORT || 8229;
+
+// Middleware
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(__dirname));
+
+// Function to generate the complete HTML with embedded data
+function generateHTML(currentTab = 'dashboard') {
+    // Get data from database
+    const contacts = dbOps.contact.getAll();
+    const companies = dbOps.company.getAll();
+    const deals = dbOps.deal.getAll();
+    const activities = dbOps.activity.getAll();
+    const stats = dbOps.getStats();
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Probyr Lite CRM - SQLite Database</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 120px);
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 1rem;
+            gap: 1rem;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: fit-content;
+            min-height: 500px;
+            position: sticky;
+            top: 1rem;
+        }
+
+        .sidebar h3 {
+            margin-bottom: 1.5rem;
+            color: #333;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #f1f3f4;
+            padding-bottom: 0.5rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-tab {
+            padding: 1rem 1.2rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-align: left;
+            font-size: 0.95rem;
+            color: #666;
+            border-left: 3px solid transparent;
+            text-decoration: none;
+            display: block;
+        }
+
+        .nav-tab.active {
+            background: #667eea15;
+            color: #667eea;
+            border-left: 3px solid #667eea;
+            font-weight: 600;
+        }
+
+        .nav-tab:hover {
+            background: #f8f9fa;
+            color: #333;
+            transform: translateX(3px);
+        }
+
+        .nav-tab.active:hover {
+            background: #667eea20;
+            color: #667eea;
+        }
+
+        .content-area {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .table th,
+        .table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .close {
+            font-size: 2rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                height: auto;
+                padding: 0.5rem;
+            }
+            
+            .sidebar {
+                width: 100%;
+                min-height: auto;
+                margin-bottom: 1rem;
+            }
+            
+            .nav-tabs {
+                flex-direction: row;
+                gap: 0.5rem;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
+            }
+            
+            .nav-tab {
+                min-width: 120px;
+                text-align: center;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+            }
+            
+            .nav-tab.active {
+                border-left: none;
+                border-bottom: 3px solid #667eea;
+            }
+            
+            .nav-tab:hover {
+                transform: translateY(-2px);
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .content-area {
+                padding: 1rem;
+            }
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .add-form {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .add-form h3 {
+            margin-bottom: 1.5rem;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Probyr Lite CRM</h1>
+        <p>SQLite Database - Complete Customer Relationship Management</p>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <h3>🗄️ Navigation</h3>
+            <div class="nav-tabs">
+                <a href="/?tab=dashboard" class="nav-tab ${currentTab === 'dashboard' ? 'active' : ''}">📊 Dashboard</a>
+                <a href="/?tab=contacts" class="nav-tab ${currentTab === 'contacts' ? 'active' : ''}">👥 Contacts</a>
+                <a href="/?tab=companies" class="nav-tab ${currentTab === 'companies' ? 'active' : ''}">🏢 Companies</a>
+                <a href="/?tab=deals" class="nav-tab ${currentTab === 'deals' ? 'active' : ''}">💰 Deals</a>
+                <a href="/?tab=activities" class="nav-tab ${currentTab === 'activities' ? 'active' : ''}">📋 Activities</a>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <!-- Dashboard Tab -->
+            <div id="dashboard" class="tab-pane ${currentTab === 'dashboard' ? 'active' : ''}">
+                <h2>Dashboard Overview</h2>
+                <div class="stats">
+                    <div class="stat-card">
+                        <span class="stat-number">${stats.total_contacts || 0}</span>
+                        <div class="stat-label">Total Contacts</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${stats.total_companies || 0}</span>
+                        <div class="stat-label">Companies</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${stats.total_deals || 0}</span>
+                        <div class="stat-label">Active Deals</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">$${(stats.total_revenue || 0).toLocaleString()}</span>
+                        <div class="stat-label">Total Revenue</div>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 2rem;">
+                    <h3>Recent Activity</h3>
+                    <div>
+                        ${activities.slice(0, 5).map(activity => `
+                            <div style="padding: 0.5rem; border-left: 3px solid #667eea; margin-bottom: 0.5rem; background: #f8f9fa;">
+                                <strong>${activity.type}:</strong> ${activity.subject}
+                                ${activity.contact_name ? ` - ${activity.contact_name}` : ''}
+                                <div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem;">
+                                    ${new Date(activity.created_at).toLocaleString()}
+                                </div>
+                            </div>
+                        `).join('') || '<p>No recent activities</p>'}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contacts Tab -->
+            <div id="contacts" class="tab-pane ${currentTab === 'contacts' ? 'active' : ''}">
+                <h2>Contacts Management</h2>
+                
+                <div class="add-form">
+                    <h3>Add New Contact</h3>
+                    <form method="POST" action="/add-contact">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Name *</label>
+                                <input type="text" name="name" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" name="email" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Phone</label>
+                                <input type="tel" name="phone" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Company</label>
+                                <select name="company_id" class="form-control">
+                                    <option value="">Select Company</option>
+                                    ${companies.map(company => `<option value="${company.id}">${company.name}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Position</label>
+                                <input type="text" name="position" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select name="lead_status" class="form-control">
+                                    <option value="New Lead">New Lead</option>
+                                    <option value="Qualified">Qualified</option>
+                                    <option value="Proposal">Proposal</option>
+                                    <option value="Customer">Customer</option>
+                                    <option value="Lost">Lost</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <textarea name="notes" class="form-control" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Contact</button>
+                    </form>
+                </div>
+
+                ${contacts.length === 0 ? `
+                    <div class="empty-state">
+                        <h3>No contacts yet</h3>
+                        <p>Start by adding your first contact above.</p>
+                    </div>
+                ` : `
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Company</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${contacts.map(contact => `
+                                <tr>
+                                    <td><strong>${contact.name}</strong></td>
+                                    <td>${contact.email || '-'}</td>
+                                    <td>${contact.phone || '-'}</td>
+                                    <td>${contact.company_name || '-'}</td>
+                                    <td><span style="padding: 0.25rem 0.5rem; border-radius: 4px; background: #e3f2fd; color: #1976d2; font-size: 0.8rem;">${contact.lead_status}</span></td>
+                                    <td>
+                                        <form method="POST" action="/delete-contact" style="display: inline;">
+                                            <input type="hidden" name="id" value="${contact.id}">
+                                            <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="return confirm('Are you sure?')">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `}
+            </div>
+
+            <!-- Companies Tab -->
+            <div id="companies" class="tab-pane ${currentTab === 'companies' ? 'active' : ''}">
+                <h2>Companies Management</h2>
+                
+                <div class="add-form">
+                    <h3>Add New Company</h3>
+                    <form method="POST" action="/add-company">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Company Name *</label>
+                                <input type="text" name="name" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" name="email" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Phone</label>
+                                <input type="tel" name="phone" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Website</label>
+                                <input type="url" name="website" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <textarea name="notes" class="form-control" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Company</button>
+                    </form>
+                </div>
+
+                ${companies.length === 0 ? `
+                    <div class="empty-state">
+                        <h3>No companies yet</h3>
+                        <p>Add companies to organize your contacts better.</p>
+                    </div>
+                ` : `
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Company Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Website</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${companies.map(company => `
+                                <tr>
+                                    <td><strong>${company.name}</strong></td>
+                                    <td>${company.email || '-'}</td>
+                                    <td>${company.phone || '-'}</td>
+                                    <td>${company.website ? `<a href="${company.website}" target="_blank">${company.website}</a>` : '-'}</td>
+                                    <td>
+                                        <form method="POST" action="/delete-company" style="display: inline;">
+                                            <input type="hidden" name="id" value="${company.id}">
+                                            <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="return confirm('Are you sure?')">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `}
+            </div>
+
+            <!-- Deals Tab -->
+            <div id="deals" class="tab-pane ${currentTab === 'deals' ? 'active' : ''}">
+                <h2>Deals Pipeline</h2>
+                
+                <div class="add-form">
+                    <h3>Add New Deal</h3>
+                    <form method="POST" action="/add-deal">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Deal Name *</label>
+                                <input type="text" name="name" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Value</label>
+                                <input type="number" name="value" class="form-control" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Contact</label>
+                                <select name="contact_id" class="form-control">
+                                    <option value="">Select Contact</option>
+                                    ${contacts.map(contact => `<option value="${contact.id}">${contact.name}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Company</label>
+                                <select name="company_id" class="form-control">
+                                    <option value="">Select Company</option>
+                                    ${companies.map(company => `<option value="${company.id}">${company.name}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Stage</label>
+                                <select name="stage" class="form-control">
+                                    <option value="Lead">Lead</option>
+                                    <option value="Qualified">Qualified</option>
+                                    <option value="Proposal">Proposal</option>
+                                    <option value="Negotiation">Negotiation</option>
+                                    <option value="Closed Won">Closed Won</option>
+                                    <option value="Closed Lost">Closed Lost</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Expected Close Date</label>
+                                <input type="date" name="expected_close_date" class="form-control">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <textarea name="notes" class="form-control" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Deal</button>
+                    </form>
+                </div>
+
+                ${deals.length === 0 ? `
+                    <div class="empty-state">
+                        <h3>No deals yet</h3>
+                        <p>Start tracking your sales opportunities by adding deals.</p>
+                    </div>
+                ` : `
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Deal Name</th>
+                                <th>Value</th>
+                                <th>Contact</th>
+                                <th>Company</th>
+                                <th>Stage</th>
+                                <th>Expected Close</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${deals.map(deal => {
+                                const stageColors = {
+                                    'Lead': '#ffc107',
+                                    'Qualified': '#17a2b8',
+                                    'Proposal': '#007bff',
+                                    'Negotiation': '#fd7e14',
+                                    'Closed Won': '#28a745',
+                                    'Closed Lost': '#dc3545'
+                                };
+                                return `
+                                    <tr>
+                                        <td><strong>${deal.name}</strong></td>
+                                        <td>$${(deal.value || 0).toLocaleString()}</td>
+                                        <td>${deal.contact_name || '-'}</td>
+                                        <td>${deal.company_name || '-'}</td>
+                                        <td><span style="padding: 0.25rem 0.5rem; border-radius: 4px; background: ${stageColors[deal.stage]}20; color: ${stageColors[deal.stage]}; font-size: 0.8rem;">${deal.stage}</span></td>
+                                        <td>${deal.expected_close_date ? new Date(deal.expected_close_date).toLocaleDateString() : '-'}</td>
+                                        <td>
+                                            <form method="POST" action="/delete-deal" style="display: inline;">
+                                                <input type="hidden" name="id" value="${deal.id}">
+                                                <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="return confirm('Are you sure?')">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `}
+            </div>
+
+            <!-- Activities Tab -->
+            <div id="activities" class="tab-pane ${currentTab === 'activities' ? 'active' : ''}">
+                <h2>Activities & Tasks</h2>
+                
+                <div class="add-form">
+                    <h3>Add New Activity</h3>
+                    <form method="POST" action="/add-activity">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Activity Type *</label>
+                                <select name="type" class="form-control" required>
+                                    <option value="">Select Type</option>
+                                    <option value="Call">Call</option>
+                                    <option value="Email">Email</option>
+                                    <option value="Meeting">Meeting</option>
+                                    <option value="Task">Task</option>
+                                    <option value="Note">Note</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Subject *</label>
+                                <input type="text" name="subject" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Contact</label>
+                                <select name="contact_id" class="form-control">
+                                    <option value="">Select Contact</option>
+                                    ${contacts.map(contact => `<option value="${contact.id}">${contact.name}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Deal</label>
+                                <select name="deal_id" class="form-control">
+                                    <option value="">Select Deal</option>
+                                    ${deals.map(deal => `<option value="${deal.id}">${deal.name}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Due Date</label>
+                            <input type="datetime-local" name="due_date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea name="description" class="form-control" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Activity</button>
+                    </form>
+                </div>
+
+                ${activities.length === 0 ? `
+                    <div class="empty-state">
+                        <h3>No activities yet</h3>
+                        <p>Track your tasks and activities to stay organized.</p>
+                    </div>
+                ` : `
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Subject</th>
+                                <th>Contact</th>
+                                <th>Deal</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${activities.map(activity => {
+                                const statusColor = activity.status === 'completed' ? '#28a745' : '#ffc107';
+                                return `
+                                    <tr>
+                                        <td><strong>${activity.type}</strong></td>
+                                        <td>${activity.subject}</td>
+                                        <td>${activity.contact_name || '-'}</td>
+                                        <td>${activity.deal_name || '-'}</td>
+                                        <td>${activity.due_date ? new Date(activity.due_date).toLocaleString() : '-'}</td>
+                                        <td><span style="padding: 0.25rem 0.5rem; border-radius: 4px; background: ${statusColor}20; color: ${statusColor}; font-size: 0.8rem;">${activity.status}</span></td>
+                                        <td>
+                                            <form method="POST" action="/delete-activity" style="display: inline;">
+                                                <input type="hidden" name="id" value="${activity.id}">
+                                                <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="return confirm('Are you sure?')">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `}
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+}
+
+// Routes
+app.get('/', (req, res) => {
+    const tab = req.query.tab || 'dashboard';
+    res.send(generateHTML(tab));
+});
+
+// Form submission handlers
+app.post('/add-contact', (req, res) => {
+    try {
+        dbOps.contact.create(req.body);
+        res.redirect('/?tab=contacts');
+    } catch (error) {
+        console.error('Error adding contact:', error);
+        res.redirect('/?tab=contacts');
+    }
+});
+
+app.post('/add-company', (req, res) => {
+    try {
+        dbOps.company.create(req.body);
+        res.redirect('/?tab=companies');
+    } catch (error) {
+        console.error('Error adding company:', error);
+        res.redirect('/?tab=companies');
+    }
+});
+
+app.post('/add-deal', (req, res) => {
+    try {
+        dbOps.deal.create(req.body);
+        res.redirect('/?tab=deals');
+    } catch (error) {
+        console.error('Error adding deal:', error);
+        res.redirect('/?tab=deals');
+    }
+});
+
+app.post('/add-activity', (req, res) => {
+    try {
+        dbOps.activity.create(req.body);
+        res.redirect('/?tab=activities');
+    } catch (error) {
+        console.error('Error adding activity:', error);
+        res.redirect('/?tab=activities');
+    }
+});
+
+// Delete handlers
+app.post('/delete-contact', (req, res) => {
+    try {
+        dbOps.contact.delete(req.body.id);
+        res.redirect('/?tab=contacts');
+    } catch (error) {
+        console.error('Error deleting contact:', error);
+        res.redirect('/?tab=contacts');
+    }
+});
+
+app.post('/delete-company', (req, res) => {
+    try {
+        dbOps.company.delete(req.body.id);
+        res.redirect('/?tab=companies');
+    } catch (error) {
+        console.error('Error deleting company:', error);
+        res.redirect('/?tab=companies');
+    }
+});
+
+app.post('/delete-deal', (req, res) => {
+    try {
+        dbOps.deal.delete(req.body.id);
+        res.redirect('/?tab=deals');
+    } catch (error) {
+        console.error('Error deleting deal:', error);
+        res.redirect('/?tab=deals');
+    }
+});
+
+app.post('/delete-activity', (req, res) => {
+    try {
+        dbOps.activity.delete(req.body.id);
+        res.redirect('/?tab=activities');
+    } catch (error) {
+        console.error('Error deleting activity:', error);
+        res.redirect('/?tab=activities');
+    }
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Probyr Lite CRM with SQLite running at http://0.0.0.0:${PORT}`);
+    console.log(`🗄️ Using SQLite database - no APIs, server-side rendering only`);
+    console.log(`📝 Data persisted in crm.db file`);
+});
