@@ -710,6 +710,16 @@ function generateHTML(currentTab = 'dashboard') {
                         <p>Start by adding your first contact above.</p>
                     </div>
                 ` : `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0 1rem 0;">
+                        <h3 style="color: #333; margin: 0;">All Contacts</h3>
+                        <div class="export-import-buttons">
+                            <a href="/export/contacts" class="btn btn-secondary" style="margin-right: 0.5rem; text-decoration: none;">📊 Export</a>
+                            <label class="btn btn-secondary" style="cursor: pointer; margin: 0;">
+                                📁 Import
+                                <input type="file" id="importContacts" accept=".json,.csv" style="display: none;" onchange="importData('contacts', this)">
+                            </label>
+                        </div>
+                    </div>
                     <table class="table">
                         <thead>
                             <tr>
@@ -784,6 +794,16 @@ function generateHTML(currentTab = 'dashboard') {
                         <p>Add companies to organize your contacts better.</p>
                     </div>
                 ` : `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0 1rem 0;">
+                        <h3 style="color: #333; margin: 0;">All Companies</h3>
+                        <div class="export-import-buttons">
+                            <a href="/export/companies" class="btn btn-secondary" style="margin-right: 0.5rem; text-decoration: none;">📊 Export</a>
+                            <label class="btn btn-secondary" style="cursor: pointer; margin: 0;">
+                                📁 Import
+                                <input type="file" id="importCompanies" accept=".json,.csv" style="display: none;" onchange="importData('companies', this)">
+                            </label>
+                        </div>
+                    </div>
                     <table class="table">
                         <thead>
                             <tr>
@@ -877,7 +897,16 @@ function generateHTML(currentTab = 'dashboard') {
                         <p>Start tracking your sales opportunities by adding deals.</p>
                     </div>
                 ` : `
-                    <h3 style="margin-top: 2rem; margin-bottom: 1rem; color: #333;">All Deals</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin: 2rem 0 1rem 0;">
+                        <h3 style="color: #333; margin: 0;">All Deals</h3>
+                        <div class="export-import-buttons">
+                            <a href="/export/deals" class="btn btn-secondary" style="margin-right: 0.5rem; text-decoration: none;">📊 Export</a>
+                            <label class="btn btn-secondary" style="cursor: pointer; margin: 0;">
+                                📁 Import
+                                <input type="file" id="importDeals" accept=".json,.csv" style="display: none;" onchange="importData('deals', this)">
+                            </label>
+                        </div>
+                    </div>
                     <table class="table">
                         <thead>
                             <tr>
@@ -1136,6 +1165,33 @@ function generateHTML(currentTab = 'dashboard') {
             document.getElementById('editDealModal').style.display = 'none';
         }
 
+        // Import data function
+        function importData(type, fileInput) {
+            const file = fileInput.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/import/' + type, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Successfully imported ' + data.count + ' ' + type + '!');
+                    location.reload();
+                } else {
+                    alert('Import failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Import error:', error);
+                alert('Import failed. Please try again.');
+            });
+        }
+
         // Close modal when clicking outside of it
         window.onclick = function(event) {
             const contactModal = document.getElementById('editContactModal');
@@ -1273,6 +1329,118 @@ app.post('/delete-activity', (req, res) => {
     } catch (error) {
         console.error('Error deleting activity:', error);
         res.redirect('/?tab=activities');
+    }
+});
+
+// Export routes
+app.get('/export/:type', (req, res) => {
+    const type = req.params.type;
+    let data, filename;
+    
+    try {
+        switch(type) {
+            case 'contacts':
+                data = dbOps.contact.getAll();
+                filename = 'contacts_export.json';
+                break;
+            case 'companies':
+                data = dbOps.company.getAll();
+                filename = 'companies_export.json';
+                break;
+            case 'deals':
+                data = dbOps.deal.getAll();
+                filename = 'deals_export.json';
+                break;
+            default:
+                return res.status(400).json({ error: 'Invalid export type' });
+        }
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.json(data);
+        
+    } catch (error) {
+        console.error('Export error:', error);
+        res.status(500).json({ error: 'Export failed' });
+    }
+});
+
+// Configure multer for file uploads
+const upload = multer({ dest: 'uploads/' });
+
+// Import routes
+app.post('/import/:type', upload.single('file'), (req, res) => {
+    const type = req.params.type;
+    const file = req.file;
+    
+    if (!file) {
+        return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+    
+    try {
+        const fs = require('fs');
+        const fileContent = fs.readFileSync(file.path, 'utf8');
+        let importData;
+        
+        // Parse JSON file
+        try {
+            importData = JSON.parse(fileContent);
+        } catch (parseError) {
+            fs.unlinkSync(file.path); // Clean up uploaded file
+            return res.status(400).json({ success: false, error: 'Invalid JSON file' });
+        }
+        
+        if (!Array.isArray(importData)) {
+            fs.unlinkSync(file.path);
+            return res.status(400).json({ success: false, error: 'File must contain an array of records' });
+        }
+        
+        let count = 0;
+        const errors = [];
+        
+        // Import each record
+        importData.forEach((record, index) => {
+            try {
+                switch(type) {
+                    case 'contacts':
+                        dbOps.contact.create(record);
+                        break;
+                    case 'companies':
+                        dbOps.company.create(record);
+                        break;
+                    case 'deals':
+                        dbOps.deal.create(record);
+                        break;
+                    default:
+                        throw new Error('Invalid import type');
+                }
+                count++;
+            } catch (error) {
+                errors.push(`Row ${index + 1}: ${error.message}`);
+            }
+        });
+        
+        // Clean up uploaded file
+        fs.unlinkSync(file.path);
+        
+        if (errors.length > 0 && count === 0) {
+            return res.json({ success: false, error: `Import failed: ${errors.join(', ')}` });
+        }
+        
+        res.json({ 
+            success: true, 
+            count, 
+            errors: errors.length > 0 ? errors : undefined 
+        });
+        
+    } catch (error) {
+        console.error('Import error:', error);
+        // Clean up uploaded file
+        if (file && file.path) {
+            const fs = require('fs');
+            try { fs.unlinkSync(file.path); } catch {}
+        }
+        res.status(500).json({ success: false, error: 'Import failed' });
     }
 });
 
