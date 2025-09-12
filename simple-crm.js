@@ -117,6 +117,188 @@ db.exec(`
   );
 `);
 
+// Add modern CRM tables and enhanced relationships
+// Note: Some company columns may already exist, so we'll skip them and focus on new tables
+db.exec(`
+  
+  -- Deals/Opportunities table - Core of CRM pipeline
+  CREATE TABLE IF NOT EXISTS deals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    company_id INTEGER NOT NULL,
+    contact_id INTEGER, -- Primary contact for this deal
+    value DECIMAL(15,2) NOT NULL DEFAULT 0,
+    currency TEXT DEFAULT 'USD',
+    stage TEXT NOT NULL DEFAULT 'Lead', -- Lead, Qualified, Proposal, Negotiation, Closed Won, Closed Lost
+    probability INTEGER DEFAULT 10, -- 0-100%
+    expected_close_date DATE,
+    actual_close_date DATE,
+    lead_source TEXT, -- Website, Referral, Cold Call, Email Campaign, etc.
+    priority TEXT DEFAULT 'Medium', -- Low, Medium, High, Urgent
+    status TEXT DEFAULT 'Open', -- Open, Closed, On Hold
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT DEFAULT 'system',
+    assigned_to TEXT DEFAULT 'system',
+    next_action TEXT,
+    next_action_date DATETIME,
+    lost_reason TEXT,
+    notes TEXT,
+    FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE,
+    FOREIGN KEY (contact_id) REFERENCES contacts (id) ON DELETE SET NULL
+  );
+  
+  -- Deal stages configuration
+  CREATE TABLE IF NOT EXISTS deal_stages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    order_index INTEGER NOT NULL DEFAULT 0,
+    probability INTEGER DEFAULT 10,
+    is_closed BOOLEAN DEFAULT FALSE,
+    is_won BOOLEAN DEFAULT FALSE,
+    color TEXT DEFAULT '#3498db',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  
+  -- Insert default pipeline stages
+  INSERT OR IGNORE INTO deal_stages (name, order_index, probability, is_closed, is_won, color) VALUES
+    ('Lead', 1, 10, FALSE, FALSE, '#95a5a6'),
+    ('Qualified', 2, 25, FALSE, FALSE, '#f39c12'),
+    ('Proposal', 3, 50, FALSE, FALSE, '#e67e22'),
+    ('Negotiation', 4, 75, FALSE, FALSE, '#d35400'),
+    ('Closed Won', 5, 100, TRUE, TRUE, '#27ae60'),
+    ('Closed Lost', 6, 0, TRUE, FALSE, '#e74c3c');
+    
+  -- Activity tracking for comprehensive CRM
+  CREATE TABLE IF NOT EXISTS crm_activities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL, -- email, call, meeting, task, note, deal_created, deal_updated, contact_created, etc.
+    subject TEXT NOT NULL,
+    description TEXT,
+    entity_type TEXT NOT NULL, -- deal, contact, company
+    entity_id INTEGER NOT NULL,
+    deal_id INTEGER,
+    contact_id INTEGER,
+    company_id INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT DEFAULT 'system',
+    due_date DATETIME,
+    completed_at DATETIME,
+    status TEXT DEFAULT 'completed', -- pending, completed, cancelled
+    metadata TEXT, -- JSON for additional data
+    FOREIGN KEY (deal_id) REFERENCES deals (id) ON DELETE CASCADE,
+    FOREIGN KEY (contact_id) REFERENCES contacts (id) ON DELETE CASCADE,
+    FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE CASCADE
+  );
+  
+  -- Deal-Contact relationships (multiple contacts can be associated with a deal)
+  CREATE TABLE IF NOT EXISTS deal_contacts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    deal_id INTEGER NOT NULL,
+    contact_id INTEGER NOT NULL,
+    role TEXT DEFAULT 'Stakeholder', -- Decision Maker, Influencer, Stakeholder, Champion, etc.
+    is_primary BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (deal_id) REFERENCES deals (id) ON DELETE CASCADE,
+    FOREIGN KEY (contact_id) REFERENCES contacts (id) ON DELETE CASCADE,
+    UNIQUE(deal_id, contact_id)
+  );
+  
+  -- Notes and communications
+  CREATE TABLE IF NOT EXISTS notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    entity_type TEXT NOT NULL, -- deal, contact, company
+    entity_id INTEGER NOT NULL,
+    is_private BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT DEFAULT 'system',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  
+  -- Tags for flexible categorization
+  CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    color TEXT DEFAULT '#3498db',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  
+  CREATE TABLE IF NOT EXISTS entity_tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tag_id INTEGER NOT NULL,
+    entity_type TEXT NOT NULL, -- deal, contact, company
+    entity_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE,
+    UNIQUE(tag_id, entity_type, entity_id)
+  );
+  
+  -- Email templates for consistent communication
+  CREATE TABLE IF NOT EXISTS email_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    category TEXT DEFAULT 'general',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  
+  -- Insert some default email templates
+  INSERT OR IGNORE INTO email_templates (name, subject, body, category) VALUES
+    ('Welcome Email', 'Welcome to our company!', 'Dear {{contact_name}}, Welcome to {{company_name}}! We are excited to work with you.', 'onboarding'),
+    ('Follow Up', 'Following up on our conversation', 'Hi {{contact_name}}, I wanted to follow up on our recent conversation about {{deal_title}}.', 'sales'),
+    ('Proposal Sent', 'Proposal for {{deal_title}}', 'Hi {{contact_name}}, Please find attached our proposal for {{deal_title}}. Looking forward to your feedback.', 'sales'),
+    ('Deal Closed Won', 'Welcome aboard!', 'Congratulations {{contact_name}}! We are thrilled to welcome {{company_name}} as our new client.', 'celebration');
+  
+  -- Lead scoring for better prioritization
+  CREATE TABLE IF NOT EXISTS lead_scoring_rules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    entity_type TEXT NOT NULL, -- contact, company, deal
+    field_name TEXT NOT NULL,
+    condition_type TEXT NOT NULL, -- equals, contains, greater_than, etc.
+    condition_value TEXT NOT NULL,
+    score INTEGER DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  
+  -- Calendar/Events for better time management
+  CREATE TABLE IF NOT EXISTS calendar_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT,
+    start_datetime DATETIME NOT NULL,
+    end_datetime DATETIME NOT NULL,
+    event_type TEXT DEFAULT 'meeting', -- meeting, call, task, demo, etc.
+    location TEXT,
+    attendees TEXT, -- JSON array of attendees
+    deal_id INTEGER,
+    contact_id INTEGER,
+    company_id INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT DEFAULT 'system',
+    reminder_minutes INTEGER DEFAULT 15,
+    status TEXT DEFAULT 'scheduled', -- scheduled, completed, cancelled
+    FOREIGN KEY (deal_id) REFERENCES deals (id) ON DELETE SET NULL,
+    FOREIGN KEY (contact_id) REFERENCES contacts (id) ON DELETE SET NULL,
+    FOREIGN KEY (company_id) REFERENCES companies (id) ON DELETE SET NULL
+  );
+  
+  -- Reports and analytics tracking
+  CREATE TABLE IF NOT EXISTS report_snapshots (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    report_type TEXT NOT NULL,
+    period TEXT NOT NULL, -- daily, weekly, monthly, quarterly, yearly
+    data TEXT NOT NULL, -- JSON data
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+`);
+
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -1634,6 +1816,13 @@ app.get('/', (req, res) => {
                     
                     document.getElementById('pageTitle').textContent = titles[tabName];
                     document.getElementById('breadcrumb').textContent = \`Home > \${titles[tabName]}\`;
+                    
+                    // Trigger display functions when switching to specific tabs
+                    if (tabName === 'companies') {
+                        displayCompanies();
+                    } else if (tabName === 'contacts') {
+                        displayContacts();
+                    }
                 });
             });
         }
@@ -3913,6 +4102,526 @@ app.delete('/api/deals/:id', (req, res) => {
     }
     
     res.json({ message: 'Deal deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== COMPREHENSIVE CRM API ENDPOINTS ====================
+
+// DEALS/OPPORTUNITIES API
+app.get('/api/deals', (req, res) => {
+  try {
+    const deals = db.prepare(`
+      SELECT d.*, c.name as company_name, cont.name as contact_name,
+             ds.color as stage_color, ds.probability as stage_probability
+      FROM deals d
+      LEFT JOIN companies c ON d.company_id = c.id
+      LEFT JOIN contacts cont ON d.contact_id = cont.id
+      LEFT JOIN deal_stages ds ON d.stage = ds.name
+      ORDER BY d.created_at DESC
+    `).all();
+    res.json(deals);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/deals/:id', (req, res) => {
+  try {
+    const deal = db.prepare(`
+      SELECT d.*, c.name as company_name, cont.name as contact_name,
+             ds.color as stage_color, ds.probability as stage_probability
+      FROM deals d
+      LEFT JOIN companies c ON d.company_id = c.id
+      LEFT JOIN contacts cont ON d.contact_id = cont.id
+      LEFT JOIN deal_stages ds ON d.stage = ds.name
+      WHERE d.id = ?
+    `).get(req.params.id);
+    
+    if (!deal) {
+      return res.status(404).json({ error: 'Deal not found' });
+    }
+    
+    // Get associated contacts
+    const contacts = db.prepare(`
+      SELECT c.*, dc.role, dc.is_primary
+      FROM contacts c
+      JOIN deal_contacts dc ON c.id = dc.contact_id
+      WHERE dc.deal_id = ?
+    `).all(req.params.id);
+    
+    // Get recent activities
+    const activities = db.prepare(`
+      SELECT * FROM crm_activities 
+      WHERE deal_id = ? 
+      ORDER BY created_at DESC 
+      LIMIT 10
+    `).all(req.params.id);
+    
+    deal.contacts = contacts;
+    deal.activities = activities;
+    
+    res.json(deal);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/deals', (req, res) => {
+  try {
+    const {
+      title, description, company_id, contact_id, value, currency, stage,
+      probability, expected_close_date, lead_source, priority, assigned_to,
+      next_action, next_action_date, notes
+    } = req.body;
+
+    if (!title || !company_id || !value) {
+      return res.status(400).json({ error: 'Title, company_id, and value are required' });
+    }
+
+    const result = db.prepare(`
+      INSERT INTO deals (
+        title, description, company_id, contact_id, value, currency, stage,
+        probability, expected_close_date, lead_source, priority, assigned_to,
+        next_action, next_action_date, notes, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `).run(
+      title, description, company_id, contact_id, value, currency || 'USD',
+      stage || 'Lead', probability || 10, expected_close_date, lead_source,
+      priority || 'Medium', assigned_to || 'system', next_action,
+      next_action_date, notes
+    );
+
+    // Log activity
+    db.prepare(`
+      INSERT INTO crm_activities (
+        type, subject, description, entity_type, entity_id, deal_id,
+        company_id, contact_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).run(
+      'deal_created', `Deal created: ${title}`, description,
+      'deal', result.lastInsertRowid, result.lastInsertRowid,
+      company_id, contact_id
+    );
+
+    const deal = db.prepare('SELECT * FROM deals WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(deal);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/deals/:id', (req, res) => {
+  try {
+    const dealId = req.params.id;
+    const {
+      title, description, value, currency, stage, probability,
+      expected_close_date, priority, assigned_to, next_action,
+      next_action_date, notes, status, lost_reason
+    } = req.body;
+
+    const updateFields = [];
+    const values = [];
+
+    if (title !== undefined) { updateFields.push('title = ?'); values.push(title); }
+    if (description !== undefined) { updateFields.push('description = ?'); values.push(description); }
+    if (value !== undefined) { updateFields.push('value = ?'); values.push(value); }
+    if (currency !== undefined) { updateFields.push('currency = ?'); values.push(currency); }
+    if (stage !== undefined) { updateFields.push('stage = ?'); values.push(stage); }
+    if (probability !== undefined) { updateFields.push('probability = ?'); values.push(probability); }
+    if (expected_close_date !== undefined) { updateFields.push('expected_close_date = ?'); values.push(expected_close_date); }
+    if (priority !== undefined) { updateFields.push('priority = ?'); values.push(priority); }
+    if (assigned_to !== undefined) { updateFields.push('assigned_to = ?'); values.push(assigned_to); }
+    if (next_action !== undefined) { updateFields.push('next_action = ?'); values.push(next_action); }
+    if (next_action_date !== undefined) { updateFields.push('next_action_date = ?'); values.push(next_action_date); }
+    if (notes !== undefined) { updateFields.push('notes = ?'); values.push(notes); }
+    if (status !== undefined) { updateFields.push('status = ?'); values.push(status); }
+    if (lost_reason !== undefined) { updateFields.push('lost_reason = ?'); values.push(lost_reason); }
+
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(dealId);
+
+    if (updateFields.length > 1) {
+      const query = `UPDATE deals SET ${updateFields.join(', ')} WHERE id = ?`;
+      db.prepare(query).run(...values);
+    }
+
+    // Log stage change activity if stage was updated
+    if (stage !== undefined) {
+      db.prepare(`
+        INSERT INTO crm_activities (
+          type, subject, description, entity_type, entity_id, deal_id,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      `).run(
+        'deal_updated', `Deal stage changed to: ${stage}`,
+        `Deal was moved to ${stage} stage`, 'deal', dealId, dealId
+      );
+    }
+
+    const deal = db.prepare('SELECT * FROM deals WHERE id = ?').get(dealId);
+    res.json(deal);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DEAL STAGES API
+app.get('/api/deal-stages', (req, res) => {
+  try {
+    const stages = db.prepare('SELECT * FROM deal_stages ORDER BY order_index').all();
+    res.json(stages);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// DEAL-CONTACT ASSOCIATIONS API
+app.post('/api/deals/:dealId/contacts', (req, res) => {
+  try {
+    const { dealId } = req.params;
+    const { contact_id, role, is_primary } = req.body;
+
+    if (!contact_id) {
+      return res.status(400).json({ error: 'Contact ID is required' });
+    }
+
+    const result = db.prepare(`
+      INSERT INTO deal_contacts (deal_id, contact_id, role, is_primary)
+      VALUES (?, ?, ?, ?)
+    `).run(dealId, contact_id, role || 'Stakeholder', is_primary || false);
+
+    // Log activity
+    const contact = db.prepare('SELECT name FROM contacts WHERE id = ?').get(contact_id);
+    db.prepare(`
+      INSERT INTO crm_activities (
+        type, subject, description, entity_type, entity_id, deal_id,
+        contact_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).run(
+      'contact_associated', `Contact associated with deal`,
+      `${contact?.name || 'Contact'} was associated with this deal as ${role}`,
+      'deal', dealId, dealId, contact_id
+    );
+
+    res.status(201).json({ message: 'Contact associated with deal' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ACTIVITIES API
+app.get('/api/activities', (req, res) => {
+  try {
+    const { entity_type, entity_id, limit = 50 } = req.query;
+    let query = `
+      SELECT a.*, c.name as company_name, cont.name as contact_name, d.title as deal_title
+      FROM crm_activities a
+      LEFT JOIN companies c ON a.company_id = c.id
+      LEFT JOIN contacts cont ON a.contact_id = cont.id
+      LEFT JOIN deals d ON a.deal_id = d.id
+    `;
+    const params = [];
+
+    if (entity_type && entity_id) {
+      query += ' WHERE a.entity_type = ? AND a.entity_id = ?';
+      params.push(entity_type, entity_id);
+    }
+
+    query += ' ORDER BY a.created_at DESC LIMIT ?';
+    params.push(parseInt(limit));
+
+    const activities = db.prepare(query).all(...params);
+    res.json(activities);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/activities', (req, res) => {
+  try {
+    const {
+      type, subject, description, entity_type, entity_id,
+      deal_id, contact_id, company_id, due_date, status
+    } = req.body;
+
+    if (!type || !subject || !entity_type || !entity_id) {
+      return res.status(400).json({ 
+        error: 'Type, subject, entity_type, and entity_id are required' 
+      });
+    }
+
+    const result = db.prepare(`
+      INSERT INTO crm_activities (
+        type, subject, description, entity_type, entity_id,
+        deal_id, contact_id, company_id, due_date, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).run(
+      type, subject, description, entity_type, entity_id,
+      deal_id, contact_id, company_id, due_date, status || 'pending'
+    );
+
+    const activity = db.prepare('SELECT * FROM crm_activities WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(activity);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// NOTES API
+app.get('/api/notes', (req, res) => {
+  try {
+    const { entity_type, entity_id } = req.query;
+    
+    if (!entity_type || !entity_id) {
+      return res.status(400).json({ error: 'entity_type and entity_id are required' });
+    }
+
+    const notes = db.prepare(`
+      SELECT * FROM notes 
+      WHERE entity_type = ? AND entity_id = ?
+      ORDER BY created_at DESC
+    `).all(entity_type, entity_id);
+
+    res.json(notes);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/notes', (req, res) => {
+  try {
+    const { content, entity_type, entity_id, is_private } = req.body;
+
+    if (!content || !entity_type || !entity_id) {
+      return res.status(400).json({ 
+        error: 'Content, entity_type, and entity_id are required' 
+      });
+    }
+
+    const result = db.prepare(`
+      INSERT INTO notes (content, entity_type, entity_id, is_private, created_at)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).run(content, entity_type, entity_id, is_private || false);
+
+    const note = db.prepare('SELECT * FROM notes WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(note);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// TAGS API
+app.get('/api/tags', (req, res) => {
+  try {
+    const tags = db.prepare('SELECT * FROM tags ORDER BY name').all();
+    res.json(tags);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/tags', (req, res) => {
+  try {
+    const { name, color } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Tag name is required' });
+    }
+
+    const result = db.prepare(`
+      INSERT INTO tags (name, color, created_at)
+      VALUES (?, ?, CURRENT_TIMESTAMP)
+    `).run(name, color || '#3498db');
+
+    const tag = db.prepare('SELECT * FROM tags WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(tag);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ENTITY TAGS API
+app.post('/api/entity-tags', (req, res) => {
+  try {
+    const { tag_id, entity_type, entity_id } = req.body;
+
+    if (!tag_id || !entity_type || !entity_id) {
+      return res.status(400).json({ 
+        error: 'tag_id, entity_type, and entity_id are required' 
+      });
+    }
+
+    const result = db.prepare(`
+      INSERT INTO entity_tags (tag_id, entity_type, entity_id, created_at)
+      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+    `).run(tag_id, entity_type, entity_id);
+
+    res.status(201).json({ message: 'Tag associated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/entity-tags/:entity_type/:entity_id', (req, res) => {
+  try {
+    const { entity_type, entity_id } = req.params;
+
+    const tags = db.prepare(`
+      SELECT t.* FROM tags t
+      JOIN entity_tags et ON t.id = et.tag_id
+      WHERE et.entity_type = ? AND et.entity_id = ?
+    `).all(entity_type, entity_id);
+
+    res.json(tags);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// CALENDAR/EVENTS API
+app.get('/api/calendar-events', (req, res) => {
+  try {
+    const { start_date, end_date, entity_type, entity_id } = req.query;
+    let query = `
+      SELECT ce.*, c.name as company_name, cont.name as contact_name, d.title as deal_title
+      FROM calendar_events ce
+      LEFT JOIN companies c ON ce.company_id = c.id
+      LEFT JOIN contacts cont ON ce.contact_id = cont.id
+      LEFT JOIN deals d ON ce.deal_id = d.id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (start_date) {
+      query += ' AND ce.start_datetime >= ?';
+      params.push(start_date);
+    }
+    if (end_date) {
+      query += ' AND ce.end_datetime <= ?';
+      params.push(end_date);
+    }
+    if (entity_type && entity_id) {
+      query += ` AND ce.${entity_type}_id = ?`;
+      params.push(entity_id);
+    }
+
+    query += ' ORDER BY ce.start_datetime ASC';
+
+    const events = db.prepare(query).all(...params);
+    res.json(events);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/calendar-events', (req, res) => {
+  try {
+    const {
+      title, description, start_datetime, end_datetime, event_type,
+      location, attendees, deal_id, contact_id, company_id, reminder_minutes
+    } = req.body;
+
+    if (!title || !start_datetime || !end_datetime) {
+      return res.status(400).json({ 
+        error: 'Title, start_datetime, and end_datetime are required' 
+      });
+    }
+
+    const result = db.prepare(`
+      INSERT INTO calendar_events (
+        title, description, start_datetime, end_datetime, event_type,
+        location, attendees, deal_id, contact_id, company_id,
+        reminder_minutes, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `).run(
+      title, description, start_datetime, end_datetime, event_type || 'meeting',
+      location, JSON.stringify(attendees || []), deal_id, contact_id, company_id,
+      reminder_minutes || 15
+    );
+
+    const event = db.prepare('SELECT * FROM calendar_events WHERE id = ?').get(result.lastInsertRowid);
+    res.status(201).json(event);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ANALYTICS API
+app.get('/api/analytics/dashboard', (req, res) => {
+  try {
+    const analytics = {
+      // Deal metrics
+      totalDeals: db.prepare('SELECT COUNT(*) as count FROM deals').get().count,
+      openDeals: db.prepare("SELECT COUNT(*) as count FROM deals WHERE status = 'Open'").get().count,
+      totalDealValue: db.prepare("SELECT COALESCE(SUM(value), 0) as total FROM deals WHERE status = 'Open'").get().total,
+      avgDealSize: db.prepare("SELECT COALESCE(AVG(value), 0) as avg FROM deals WHERE status = 'Open'").get().avg,
+      
+      // Deal pipeline by stage
+      dealsByStage: db.prepare(`
+        SELECT d.stage, COUNT(*) as count, COALESCE(SUM(d.value), 0) as value
+        FROM deals d 
+        WHERE d.status = 'Open'
+        GROUP BY d.stage
+        ORDER BY d.stage
+      `).all(),
+      
+      // Monthly deal trends
+      monthlyDeals: db.prepare(`
+        SELECT 
+          strftime('%Y-%m', created_at) as month,
+          COUNT(*) as count,
+          COALESCE(SUM(value), 0) as value
+        FROM deals
+        WHERE created_at >= date('now', '-12 months')
+        GROUP BY strftime('%Y-%m', created_at)
+        ORDER BY month DESC
+      `).all(),
+      
+      // Top performing companies
+      topCompanies: db.prepare(`
+        SELECT c.name, COUNT(d.id) as deal_count, COALESCE(SUM(d.value), 0) as total_value
+        FROM companies c
+        LEFT JOIN deals d ON c.id = d.company_id
+        GROUP BY c.id, c.name
+        HAVING deal_count > 0
+        ORDER BY total_value DESC
+        LIMIT 10
+      `).all(),
+      
+      // Recent activities
+      recentActivities: db.prepare(`
+        SELECT a.*, c.name as company_name, cont.name as contact_name, d.title as deal_title
+        FROM crm_activities a
+        LEFT JOIN companies c ON a.company_id = c.id
+        LEFT JOIN contacts cont ON a.contact_id = cont.id
+        LEFT JOIN deals d ON a.deal_id = d.id
+        ORDER BY a.created_at DESC
+        LIMIT 20
+      `).all(),
+      
+      // Upcoming events
+      upcomingEvents: db.prepare(`
+        SELECT * FROM calendar_events
+        WHERE start_datetime >= datetime('now')
+        AND start_datetime <= datetime('now', '+7 days')
+        ORDER BY start_datetime ASC
+        LIMIT 10
+      `).all()
+    };
+
+    res.json(analytics);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// EMAIL TEMPLATES API
+app.get('/api/email-templates', (req, res) => {
+  try {
+    const templates = db.prepare('SELECT * FROM email_templates WHERE is_active = 1 ORDER BY category, name').all();
+    res.json(templates);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
