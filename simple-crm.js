@@ -5,7 +5,7 @@ import multer from 'multer';
 import Papa from 'papaparse';
 
 const app = express();
-const PORT = 8516;
+const PORT = process.env.PORT || 8061;
 
 // Initialize SQLite database
 const db = new Database('simple-crm.db');
@@ -3192,8 +3192,6 @@ app.get('/', (req, res) => {
 
         function closeCreateDeal() {
             document.getElementById('createDealModal').style.display = 'none';
-        }
-
         }
     </script>
 </body>

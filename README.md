@@ -44,7 +44,7 @@ A simple, intuitive, and collaborative Customer Relationship Management (CRM) to
    ```
 
 3. **Access the application**:
-   - Open your browser and navigate to `http://localhost:8516`
+   - Open your browser and navigate to `http://localhost:8061`
    - The CRM will be ready to use immediately
 
 ### Docker Configuration
@@ -77,7 +77,7 @@ For production deployment with SSL and reverse proxy:
 The application supports the following environment variables:
 
 - `NODE_ENV`: Set to `production` for production deployment
-- `PORT`: Server port (default: 8516)
+- `PORT`: Server port (default: 8061)
 
 ### Data Management
 
@@ -88,7 +88,7 @@ The application supports the following environment variables:
 ### Monitoring
 
 The application includes built-in health checks accessible at:
-- Health endpoint: `http://localhost:8516/api/health`
+- Health endpoint: `http://localhost:8061/api/health`
 - Container health status via Docker commands
 
 ### Stopping the Application

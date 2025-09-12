@@ -5,16 +5,16 @@ services:
     build: .
     container_name: probyr-crm
     ports:
-      - "8516:8516"
+      - "8061:8061"
     environment:
       - NODE_ENV=production
-      - PORT=8516
+      - PORT=8061
     volumes:
       - ./data:/app/data
       - crm_data:/app/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8516/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8061/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
       interval: 30s
       timeout: 10s
       retries: 3
