@@ -539,9 +539,9 @@ function generateHTML(currentTab = 'dashboard') {
             <h3>🗄️ Navigation</h3>
             <div class="nav-tabs">
                 <a href="/?tab=dashboard" class="nav-tab ${currentTab === 'dashboard' ? 'active' : ''}">📊 Dashboard</a>
-                <a href="/?tab=contacts" class="nav-tab ${currentTab === 'contacts' ? 'active' : ''}">👥 Contacts</a>
-                <a href="/?tab=companies" class="nav-tab ${currentTab === 'companies' ? 'active' : ''}">🏢 Companies</a>
                 <a href="/?tab=deals" class="nav-tab ${currentTab === 'deals' ? 'active' : ''}">💰 Deals</a>
+                <a href="/?tab=companies" class="nav-tab ${currentTab === 'companies' ? 'active' : ''}">🏢 Companies</a>
+                <a href="/?tab=contacts" class="nav-tab ${currentTab === 'contacts' ? 'active' : ''}">👥 Contacts</a>
             </div>
         </div>
 
@@ -730,6 +730,7 @@ function generateHTML(currentTab = 'dashboard') {
                                     <td>${contact.company_name || '-'}</td>
                                     <td><span style="padding: 0.25rem 0.5rem; border-radius: 4px; background: #e3f2fd; color: #1976d2; font-size: 0.8rem;">${contact.lead_status}</span></td>
                                     <td>
+                                        <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin-right: 0.5rem;" onclick="openEditContactModal(${contact.id}, '${contact.name.replace(/'/g, "\\'")}', '${contact.email || ''}', '${contact.phone || ''}', ${contact.company_id || 'null'}, '${contact.position || ''}', '${contact.lead_status}', '${contact.notes ? contact.notes.replace(/'/g, "\\'") : ''}')">Edit</button>
                                         <form method="POST" action="/delete-contact" style="display: inline;">
                                             <input type="hidden" name="id" value="${contact.id}">
                                             <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="return confirm('Are you sure?')">Delete</button>
@@ -801,6 +802,7 @@ function generateHTML(currentTab = 'dashboard') {
                                     <td>${company.phone || '-'}</td>
                                     <td>${company.website ? `<a href="${company.website}" target="_blank">${company.website}</a>` : '-'}</td>
                                     <td>
+                                        <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; margin-right: 0.5rem;" onclick="openEditCompanyModal(${company.id}, '${company.name.replace(/'/g, "\\'")}', '${company.email || ''}', '${company.phone || ''}', '${company.website || ''}', '${company.notes ? company.notes.replace(/'/g, "\\'") : ''}')">Edit</button>
                                         <form method="POST" action="/delete-company" style="display: inline;">
                                             <input type="hidden" name="id" value="${company.id}">
                                             <button type="submit" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;" onclick="return confirm('Are you sure?')">Delete</button>
@@ -922,6 +924,103 @@ function generateHTML(currentTab = 'dashboard') {
         </div>
     </div>
 
+    <!-- Edit Contact Modal -->
+    <div id="editContactModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditContactModal()">&times;</span>
+            <h3>Edit Contact</h3>
+            <form method="POST" action="/update-contact" id="editContactForm">
+                <input type="hidden" name="id" id="editContactId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Name *</label>
+                        <input type="text" name="name" id="editContactName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email" id="editContactEmail" class="form-control">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" name="phone" id="editContactPhone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Company</label>
+                        <select name="company_id" id="editContactCompany" class="form-control">
+                            <option value="">Select Company</option>
+                            ${companies.map(company => `<option value="${company.id}">${company.name}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Position</label>
+                        <input type="text" name="position" id="editContactPosition" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="lead_status" id="editContactStatus" class="form-control">
+                            <option value="New Lead">New Lead</option>
+                            <option value="Qualified">Qualified</option>
+                            <option value="Proposal">Proposal</option>
+                            <option value="Customer">Customer</option>
+                            <option value="Lost">Lost</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea name="notes" id="editContactNotes" class="form-control" rows="3"></textarea>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary">Update Contact</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditContactModal()" style="margin-left: 10px;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Company Modal -->
+    <div id="editCompanyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditCompanyModal()">&times;</span>
+            <h3>Edit Company</h3>
+            <form method="POST" action="/update-company" id="editCompanyForm">
+                <input type="hidden" name="id" id="editCompanyId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Company Name *</label>
+                        <input type="text" name="name" id="editCompanyName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" name="email" id="editCompanyEmail" class="form-control">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" name="phone" id="editCompanyPhone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Website</label>
+                        <input type="url" name="website" id="editCompanyWebsite" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea name="notes" id="editCompanyNotes" class="form-control" rows="3"></textarea>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary">Update Company</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditCompanyModal()" style="margin-left: 10px;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Edit Deal Modal -->
     <div id="editDealModal" class="modal">
         <div class="modal-content">
@@ -987,6 +1086,39 @@ function generateHTML(currentTab = 'dashboard') {
     </div>
 
     <script>
+        // Contact modal functions
+        function openEditContactModal(id, name, email, phone, companyId, position, status, notes) {
+            document.getElementById('editContactId').value = id;
+            document.getElementById('editContactName').value = name;
+            document.getElementById('editContactEmail').value = email || '';
+            document.getElementById('editContactPhone').value = phone || '';
+            document.getElementById('editContactCompany').value = companyId || '';
+            document.getElementById('editContactPosition').value = position || '';
+            document.getElementById('editContactStatus').value = status;
+            document.getElementById('editContactNotes').value = notes || '';
+            document.getElementById('editContactModal').style.display = 'block';
+        }
+
+        function closeEditContactModal() {
+            document.getElementById('editContactModal').style.display = 'none';
+        }
+
+        // Company modal functions
+        function openEditCompanyModal(id, name, email, phone, website, notes) {
+            document.getElementById('editCompanyId').value = id;
+            document.getElementById('editCompanyName').value = name;
+            document.getElementById('editCompanyEmail').value = email || '';
+            document.getElementById('editCompanyPhone').value = phone || '';
+            document.getElementById('editCompanyWebsite').value = website || '';
+            document.getElementById('editCompanyNotes').value = notes || '';
+            document.getElementById('editCompanyModal').style.display = 'block';
+        }
+
+        function closeEditCompanyModal() {
+            document.getElementById('editCompanyModal').style.display = 'none';
+        }
+
+        // Deal modal functions
         function openEditDealModal(id, name, description, value, contactId, companyId, stage, closeDate, notes) {
             document.getElementById('editDealId').value = id;
             document.getElementById('editDealName').value = name;
@@ -1006,8 +1138,15 @@ function generateHTML(currentTab = 'dashboard') {
 
         // Close modal when clicking outside of it
         window.onclick = function(event) {
-            const modal = document.getElementById('editDealModal');
-            if (event.target === modal) {
+            const contactModal = document.getElementById('editContactModal');
+            const companyModal = document.getElementById('editCompanyModal');
+            const dealModal = document.getElementById('editDealModal');
+            
+            if (event.target === contactModal) {
+                closeEditContactModal();
+            } else if (event.target === companyModal) {
+                closeEditCompanyModal();
+            } else if (event.target === dealModal) {
                 closeEditDealModal();
             }
         }
@@ -1050,6 +1189,28 @@ app.post('/add-deal', (req, res) => {
     } catch (error) {
         console.error('Error adding deal:', error);
         res.redirect('/?tab=deals');
+    }
+});
+
+app.post('/update-contact', (req, res) => {
+    try {
+        const { id, ...updateData } = req.body;
+        dbOps.contact.update(id, updateData);
+        res.redirect('/?tab=contacts');
+    } catch (error) {
+        console.error('Error updating contact:', error);
+        res.redirect('/?tab=contacts');
+    }
+});
+
+app.post('/update-company', (req, res) => {
+    try {
+        const { id, ...updateData } = req.body;
+        dbOps.company.update(id, updateData);
+        res.redirect('/?tab=companies');
+    } catch (error) {
+        console.error('Error updating company:', error);
+        res.redirect('/?tab=companies');
     }
 });
 
