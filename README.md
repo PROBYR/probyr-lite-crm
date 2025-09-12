@@ -57,96 +57,26 @@ A **comprehensive, modern Customer Relationship Management (CRM) system** built 
 - **Real-time Analytics**: Live pipeline metrics and reporting
 - **Integration Ready**: Webhook support and external API compatibility
 
-## 🐳 **Production Docker Deployment**
+## 🚀 Deployment
+
+This application is designed to be deployed using Docker.
 
 ### Prerequisites
-- Docker 20.10+
-- Docker Compose 2.0+
+- Docker
+- Docker Compose
 
-### Quick Start
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/Hudi-Cares/probyr-lite-crm.git
-   cd probyr-lite-crm
-   ```
-
-2. **Deploy with Docker Compose**:
-   ```bash
-   docker-compose up -d
-   ```
-
-3. **Access the CRM**:
-   - **Application**: `http://localhost:8061`
-   - **Analytics**: `http://localhost:8061/api/analytics/dashboard`
-   - **Health Check**: `http://localhost:8061/api/health`
-
-### Production Configuration
-
-The application includes enterprise-ready Docker configuration:
-
-- **Production Dockerfile**: Node.js 18 Alpine with optimized build
-- **Multi-service Architecture**: App container with optional Nginx reverse proxy
-- **Health Monitoring**: Built-in health checks and container monitoring
-- **Data Persistence**: SQLite with Docker volume persistence
-- **Environment Configuration**: Flexible environment variable support
-
-### Production Deployment Options
-
-#### Standard Deployment
-```bash
-# Basic production deployment
-docker-compose up -d
-```
-
-#### With Reverse Proxy & SSL
-```bash
-# Production deployment with Nginx proxy
-docker-compose --profile production up -d
-```
-
-### Environment Variables
-
-```bash
-NODE_ENV=production          # Production mode
-PORT=8061                   # Application port
-DB_PATH=/app/data          # Database path
-LOG_LEVEL=info             # Logging level
-```
-
-### Data Management
-
-- **Database**: SQLite with automatic migrations
-- **Backups**: Automated volume backup support
-- **Migrations**: Built-in schema upgrade system
-- **Data Export**: CSV export for all entities
-
-### Monitoring & Health Checks
-
-```bash
-# Check application health
-curl http://localhost:8061/api/health
-
-# Container health status
-docker-compose ps
-
-# View logs
-docker-compose logs -f probyr-crm
-```
-
-### Scaling & Production
-
-```bash
-# Stop services
-docker-compose down
-
-# Update and restart
-git pull origin main
-docker-compose up -d --build
-
-# Remove all data (destructive)
-docker-compose down -v
-```
+### Steps
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/Hudi-Cares/probyr-lite-crm.git
+    cd probyr-lite-crm
+    ```
+2.  **Run the application:**
+    ```bash
+    docker-compose up -d
+    ```
+3.  **Access the application:**
+    Open your browser and navigate to `http://localhost:8061`.
 
 ## 🎯 **CRM Best Practices Implemented**
 
