@@ -8,10 +8,9 @@
     "frontend"
   ],
   "scripts": {
-    "dev": "concurrently \"nodemon server.js\" \"cd frontend && ../node_modules/.bin/vite --host 0.0.0.0 --port 3000\"",
-    "dev:backend": "nodemon server.js",
-    "dev:frontend": "cd frontend && ../node_modules/.bin/vite --host 0.0.0.0 --port 3000",
-    "start": "bun run server.js",
+    "dev": "bun run simple-server.js",
+    "start": "bun run simple-server.js",
+    "old-server": "bun run server.js",
     "deploy": "nodemon simple-crm.js",
     "simple": "node simple-crm.js"
   },
