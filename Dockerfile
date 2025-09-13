@@ -51,12 +51,12 @@ RUN npm install -g @encore/cli
 # Switch to non-root user
 USER encore
 
-# Expose port
-EXPOSE 4000
+# Expose port (configurable via environment variable)
+EXPOSE ${PORT:-4000}
 
-# Health check
+# Health check (uses dynamic port)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:4000/health || exit 1
+  CMD curl -f http://localhost:${PORT:-4000}/health || exit 1
 
-# Start the application
-CMD ["encore", "run"]
+# Start the application with dynamic port
+CMD encore run --port=${PORT:-4000}

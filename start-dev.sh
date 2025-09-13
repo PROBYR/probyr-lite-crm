@@ -5,12 +5,22 @@
 
 set -e
 
-echo "🚀 Starting Probyr Lite CRM Native Development..."
+# Get available ports or use defaults
+BACKEND_PORT=${ENCORE_PORT:-4000}
+FRONTEND_PORT=${VITE_PORT:-0}  # 0 = auto-assign
 
-# Kill any existing processes on ports 4000 and 8439
-echo "🔪 Killing existing processes on ports 4000 and 8439..."
-lsof -ti:4000 | xargs -r kill -9 || true
-lsof -ti:8439 | xargs -r kill -9 || true
+echo "🚀 Starting Probyr Lite CRM Native Development..."
+echo "🔧 Backend port: $BACKEND_PORT"
+echo "🌐 Frontend port: $FRONTEND_PORT (auto-assign if 0)"
+
+# Kill any existing processes on the specified ports
+echo "🔪 Cleaning up existing processes..."
+if [ "$BACKEND_PORT" != "0" ]; then
+    lsof -ti:$BACKEND_PORT | xargs -r kill -9 || true
+fi
+if [ "$FRONTEND_PORT" != "0" ]; then
+    lsof -ti:$FRONTEND_PORT | xargs -r kill -9 || true
+fi
 
 # Check if Encore CLI is installed
 if ! command -v encore &> /dev/null; then
@@ -41,8 +51,9 @@ cd ..
 
 # Function to start backend
 start_backend() {
-    echo "🔧 Starting Encore backend on port 4000..."
+    echo "🔧 Starting Encore backend on port $BACKEND_PORT..."
     cd backend
+    export ENCORE_PORT=$BACKEND_PORT
     encore run &
     BACKEND_PID=$!
     cd ..
@@ -50,9 +61,11 @@ start_backend() {
 
 # Function to start frontend
 start_frontend() {
-    echo "🌐 Starting Vite frontend on port 8439..."
+    echo "🌐 Starting Vite frontend on port $FRONTEND_PORT..."
     cd frontend
-    npx vite dev --host 0.0.0.0 --port 8439 &
+    export VITE_PORT=$FRONTEND_PORT
+    export VITE_BACKEND_URL="http://localhost:$BACKEND_PORT"
+    npx vite dev --host 0.0.0.0 --port $FRONTEND_PORT &
     FRONTEND_PID=$!
     cd ..
 }
@@ -74,8 +87,8 @@ sleep 3
 start_frontend
 
 echo "✅ Development environment is running!"
-echo "🌐 Frontend: http://0.0.0.0:8439"
-echo "🔧 Backend: http://0.0.0.0:4000"
+echo "🌐 Frontend: http://0.0.0.0:$FRONTEND_PORT (check terminal for actual port if auto-assigned)"
+echo "🔧 Backend: http://0.0.0.0:$BACKEND_PORT"
 echo "📝 Live code reflection is enabled - changes will be reflected automatically!"
 echo "Press Ctrl+C to stop all services"
 

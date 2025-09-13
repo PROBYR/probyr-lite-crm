@@ -12,8 +12,8 @@ RUN npm install
 # Copy source code
 COPY frontend/ .
 
-# Expose port
-EXPOSE 8439
+# Expose port (configurable via environment variable)
+EXPOSE ${VITE_PORT:-8439}
 
 # Start development server with live reload
-CMD ["npx", "vite", "dev", "--host", "0.0.0.0", "--port", "8439"]
+CMD npx vite dev --host 0.0.0.0 --port ${VITE_PORT:-8439}

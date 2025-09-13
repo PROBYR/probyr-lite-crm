@@ -1,0 +1,6 @@
+78[0J[1000D[2K[36m  ⠋ Building Encore application graph... [0m
+8[0J[1000D[2K[36m  ⠙ Building Encore application graph... [0m
+[1000D[2K[36m  ⠋ Analyzing service topology... [0m
+8[0J[1000D[2K[31m  ❌ Building Encore application graph... Failed: parse error[0m
+[1000D[2K[36m  ⠙ Analyzing service topology... [0m
+installing node_modules failed: No such file or directory (os error 2), run 'bun install' manually to see the error

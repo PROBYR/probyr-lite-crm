@@ -5,11 +5,15 @@
 
 set -e
 
-echo "🐳 Deploying Probyr Lite CRM with Docker on port 8439..."
+# Get available port or use default
+FRONTEND_PORT=${VITE_PORT:-8439}
+VITE_PORT=${VITE_PORT:-8439}
 
-# Kill any existing processes on port 8439
-echo "🔪 Cleaning up port 8439..."
-lsof -ti:8439 | xargs -r kill -9 || true
+echo "🐳 Deploying Probyr Lite CRM with Docker on port $FRONTEND_PORT..."
+
+# Kill any existing processes on the specified port
+echo "🔪 Cleaning up port $FRONTEND_PORT..."
+lsof -ti:$FRONTEND_PORT | xargs -r kill -9 || true
 
 # Stop and remove existing containers
 echo "🐳 Cleaning up existing containers..."
@@ -23,13 +27,14 @@ docker build -f Dockerfile.dev -t probyr-frontend-dev .
 echo "🚀 Starting development container..."
 docker run -d \
   --name probyr-frontend-dev \
-  -p 8439:8439 \
+  -p $FRONTEND_PORT:${VITE_PORT:-8439} \
   -v "$(pwd)/frontend:/app" \
   -v /app/node_modules \
+  -e VITE_PORT=${VITE_PORT:-8439} \
   probyr-frontend-dev
 
 echo "✅ Application deployed successfully!"
-echo "🌐 Frontend: http://0.0.0.0:8439"
+echo "🌐 Frontend: http://0.0.0.0:$FRONTEND_PORT"
 echo "📝 Live code reflection enabled - changes will be reflected automatically!"
 echo ""
 echo "To view logs: docker logs -f probyr-frontend-dev"

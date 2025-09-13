@@ -19,9 +19,9 @@ export default defineConfig({
     minify: false,
   },
   server: {
-    port: 8439,
+    port: process.env.VITE_PORT ? parseInt(process.env.VITE_PORT) : 0, // 0 = auto-assign available port
     host: true,
-    strictPort: true,
+    strictPort: false, // Allow port changes if specified port is unavailable
     open: false,
     cors: true,
     allowedHosts: ['crm.probyr.com', 'localhost', '0.0.0.0']

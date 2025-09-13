@@ -10,9 +10,10 @@ services:
       - ./frontend:/app/frontend
       - encore_cache:/root/.encore
     ports:
-      - "4000:4000"
+      - "${BACKEND_PORT:-4000}:4000"
     environment:
       - ENCORE_ENV=development
+      - PORT=${BACKEND_PORT:-4000}
     command: encore run
     networks:
       - probyr-network
@@ -25,10 +26,11 @@ services:
       - ./frontend:/app/frontend
       - frontend_node_modules:/app/frontend/node_modules
     ports:
-      - "8439:8439"
+      - "${FRONTEND_PORT:-8439}:8439"
     environment:
       - NODE_ENV=development
-    command: sh -c "npm install && npx vite dev --host 0.0.0.0 --port 8439"
+      - VITE_PORT=${FRONTEND_PORT:-8439}
+    command: sh -c "npm install && npx vite dev --host 0.0.0.0 --port ${VITE_PORT:-8439}"
     depends_on:
       - backend
     networks:

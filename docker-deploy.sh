@@ -5,7 +5,10 @@
 
 set -e
 
-echo "🐳 Deploying Probyr Lite CRM with Docker..."
+# Get available port or use default
+BACKEND_PORT=${BACKEND_PORT:-4000}
+
+echo "🐳 Deploying Probyr Lite CRM with Docker on port $BACKEND_PORT..."
 
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
@@ -29,6 +32,7 @@ docker rmi probyr-lite-crm-1757733081_probyr-crm 2>/dev/null || true
 
 # Build and start the application
 echo "🔨 Building and starting the application..."
+export BACKEND_PORT=$BACKEND_PORT
 if command -v docker-compose &> /dev/null; then
     docker-compose up --build -d
 else
@@ -42,7 +46,7 @@ sleep 10
 # Check if the application is running
 if docker ps | grep -q probyr-crm; then
     echo "✅ Application deployed successfully!"
-    echo "🌐 Application is available at: http://localhost:4000"
+    echo "🌐 Application is available at: http://localhost:$BACKEND_PORT"
     echo "📊 Container status:"
     docker ps | grep probyr-crm
     echo ""
