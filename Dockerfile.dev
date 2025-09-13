@@ -1,0 +1,19 @@
+# Development Dockerfile for Probyr Lite CRM
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY frontend/ .
+
+# Expose port
+EXPOSE 8439
+
+# Start development server with live reload
+CMD ["npx", "vite", "dev", "--host", "0.0.0.0", "--port", "8439"]

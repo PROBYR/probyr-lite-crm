@@ -59,10 +59,36 @@ A modern, full-stack Customer Relationship Management (CRM) system built with En
 ## Getting Started
 
 ### Prerequisites
+
+#### For Development:
 - Node.js 18 or later
 - Encore CLI (`npm install -g @encore/cli`)
 
-### Installation
+#### For Docker Deployment:
+- Docker 20.10 or later
+- Docker Compose 2.0 or later
+
+### Installation Options
+
+#### Option 1: Docker Deployment (Recommended for Production)
+
+1. **Clone the repository**:
+```bash
+git clone https://github.com/YOUR_USERNAME/probyr-crm.git
+cd probyr-crm
+```
+
+2. **Deploy with Docker**:
+```bash
+./docker-deploy.sh
+```
+
+This will:
+- Build the application using Docker
+- Start the application in a container
+- Make it available at http://localhost:4000
+
+#### Option 2: Native Development
 
 1. **Clone the repository**:
 ```bash
@@ -113,6 +139,10 @@ probyr-crm/
 │   ├── components/        # Reusable UI components
 │   ├── pages/             # Page components
 │   └── lib/               # Utility functions
+├── Dockerfile             # Production Docker configuration
+├── docker-compose.yml     # Docker Compose configuration
+├── docker-deploy.sh       # Docker deployment script
+├── .dockerignore          # Docker ignore file
 └── README.md
 ```
 
@@ -179,17 +209,321 @@ API keys support granular permissions:
 2. Create custom pipelines for different sales processes
 3. Configure stages with win/loss indicators
 
-## Deployment
+## 🚀 Deployment Guide
 
-The application is designed to be deployed using Encore's built-in deployment system:
+This section provides comprehensive deployment instructions for Probyr Lite CRM. Choose the deployment method that best fits your needs.
 
+### 🎯 Quick Start (TL;DR)
+
+**For Production (Recommended):**
 ```bash
+git clone https://github.com/YOUR_USERNAME/probyr-crm.git
+cd probyr-crm
+./docker-deploy.sh
+# Access at http://localhost:4000
+```
+
+**For Development:**
+```bash
+git clone https://github.com/YOUR_USERNAME/probyr-crm.git
+cd probyr-crm
+npm install
+encore run
+# Access at http://localhost:4000
+```
+
+### 📋 Deployment Options Summary
+
+| Method | Best For | Difficulty | Setup Time | Production Ready |
+|--------|----------|------------|------------|------------------|
+| 🐳 Docker | Production | Easy | 5 minutes | ✅ Yes |
+| ☁️ Encore Cloud | Managed hosting | Easy | 10 minutes | ✅ Yes |
+| 🖥️ Custom Server | Self-hosted | Medium | 15 minutes | ✅ Yes |
+| 🌐 Cloud Platforms | Scalable hosting | Medium | 20 minutes | ✅ Yes |
+| 💻 Native | Development | Easy | 5 minutes | ❌ No |
+
+### 🐳 Docker Deployment (Recommended for Production)
+
+The application is fully dockerized and production-ready. This is the **recommended deployment method** for production environments.
+
+#### Prerequisites
+- Docker 20.10 or later
+- Docker Compose 2.0 or later
+- At least 2GB RAM available
+- Port 4000 available (or configure custom port)
+
+#### Quick Deployment (One Command)
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/probyr-crm.git
+cd probyr-crm
+
+# Deploy with one command
+./docker-deploy.sh
+```
+
+#### Manual Docker Deployment
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/probyr-crm.git
+cd probyr-crm
+
+# Build and start the application
+docker-compose up --build -d
+
+# Check status
+docker ps
+
+# View logs
+docker logs -f probyr-crm
+
+# Stop the application
+docker-compose down
+```
+
+#### Docker Configuration Features
+- **Port**: 4000 (configurable in docker-compose.yml)
+- **Health Check**: Built-in health monitoring every 30 seconds
+- **Auto-restart**: Container restarts automatically on failure
+- **Security**: Runs as non-root user (uid: 1001)
+- **Multi-stage Build**: Optimized image size and build process
+- **Production Ready**: Includes all necessary production optimizations
+
+### ☁️ Encore Cloud Deployment
+
+For Encore's managed cloud deployment (requires Encore CLI):
+
+#### Prerequisites
+- Encore CLI installed (`npm install -g @encore/cli`)
+- Encore account and project setup
+
+#### Deploy to Encore Cloud
+```bash
+# Initialize Encore project (if not already done)
+encore app create
+
+# Deploy to production
 git add .
 git commit -m "Deploy to production"
 git push encore main
 ```
 
+#### Benefits of Encore Cloud
+- Automatic scaling and load balancing
+- Built-in database management
+- SSL certificates and CDN
+- Monitoring and logging
+- Zero-downtime deployments
+
+### 🖥️ Custom Server Deployment
+
+Deploy on your own server or VPS:
+
+#### Option 1: Docker on Custom Server
+```bash
+# On your server, clone the repository
+git clone https://github.com/YOUR_USERNAME/probyr-crm.git
+cd probyr-crm
+
+# Build the Docker image
+docker build -t probyr-crm .
+
+# Run the container
+docker run -d \
+  --name probyr-crm \
+  -p 4000:4000 \
+  --restart unless-stopped \
+  probyr-crm
+```
+
+#### Option 2: Docker Compose on Custom Server
+```bash
+# Clone and deploy
+git clone https://github.com/YOUR_USERNAME/probyr-crm.git
+cd probyr-crm
+docker-compose up -d
+```
+
+#### Option 3: Native Installation (Development Only)
+```bash
+# Install dependencies
+npm install
+
+# Install Encore CLI
+npm install -g @encore/cli
+
+# Start the application
+encore run
+```
+
+### 🌐 Cloud Platform Deployments
+
+#### AWS EC2 Deployment
+```bash
+# Launch EC2 instance (Ubuntu 20.04+ recommended)
+# Install Docker
+sudo apt update
+sudo apt install docker.io docker-compose -y
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# Clone and deploy
+git clone https://github.com/YOUR_USERNAME/probyr-crm.git
+cd probyr-crm
+sudo docker-compose up -d
+```
+
+#### DigitalOcean Droplet Deployment
+```bash
+# Create a droplet (Ubuntu 20.04+ recommended)
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo apt install docker-compose -y
+
+# Clone and deploy
+git clone https://github.com/YOUR_USERNAME/probyr-crm.git
+cd probyr-crm
+sudo docker-compose up -d
+```
+
+#### Google Cloud Platform Deployment
+```bash
+# Create a Compute Engine instance
+# Install Docker
+sudo apt update
+sudo apt install docker.io docker-compose -y
+
+# Clone and deploy
+git clone https://github.com/YOUR_USERNAME/probyr-crm.git
+cd probyr-crm
+sudo docker-compose up -d
+```
+
+### ⚙️ Configuration
+
+#### Environment Variables
+The application supports the following environment variables:
+
+- `NODE_ENV`: Set to `production` for production deployment
+- `ENCORE_ENV`: Set to `production` for Encore backend configuration
+- `PORT`: Override the default port (default: 4000)
+
+#### Port Configuration
+To change the port, update the `docker-compose.yml` file:
+```yaml
+ports:
+  - "YOUR_PORT:4000"
+```
+
+Or set environment variable:
+```bash
+export PORT=8080
+docker-compose up -d
+```
+
+#### SSL/HTTPS Setup
+For production deployments, set up SSL certificates:
+
+```bash
+# Using Let's Encrypt with nginx reverse proxy
+# Install nginx and certbot
+sudo apt install nginx certbot python3-certbot-nginx
+
+# Configure nginx reverse proxy
+sudo nano /etc/nginx/sites-available/probyr-crm
+```
+
+Nginx configuration example:
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+    
+    location / {
+        proxy_pass http://localhost:4000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+```bash
+# Enable the site and get SSL certificate
+sudo ln -s /etc/nginx/sites-available/probyr-crm /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+sudo certbot --nginx -d your-domain.com
+```
+
 For other deployment options, refer to the [Encore.ts deployment documentation](https://encore.dev/docs/deploy).
+
+### Docker Troubleshooting
+
+#### Common Issues
+
+**Port already in use**:
+```bash
+# Check what's using port 4000
+lsof -i :4000
+
+# Kill the process
+sudo kill -9 $(lsof -ti:4000)
+```
+
+**Docker build fails**:
+```bash
+# Clean Docker cache
+docker system prune -a
+
+# Rebuild without cache
+docker-compose build --no-cache
+```
+
+**Container won't start**:
+```bash
+# Check container logs
+docker logs probyr-crm
+
+# Check container status
+docker ps -a
+```
+
+**Permission issues**:
+```bash
+# Ensure Docker daemon is running
+sudo systemctl start docker
+
+# Add user to docker group (Linux)
+sudo usermod -aG docker $USER
+```
+
+#### Docker Commands Reference
+
+```bash
+# View running containers
+docker ps
+
+# View all containers
+docker ps -a
+
+# View container logs
+docker logs -f probyr-crm
+
+# Execute commands in container
+docker exec -it probyr-crm sh
+
+# Stop and remove containers
+docker-compose down
+
+# Remove all containers and images
+docker-compose down --rmi all
+
+# View Docker system info
+docker system df
+```
 
 ## Development
 

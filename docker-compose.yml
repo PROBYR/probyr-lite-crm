@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  probyr-crm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: probyr-crm
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - ENCORE_ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - probyr-network
+
+networks:
+  probyr-network:
+    driver: bridge

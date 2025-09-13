@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  backend:
+    image: encoredev/encore:latest
+    container_name: probyr-backend-dev
+    working_dir: /app/backend
+    volumes:
+      - ./backend:/app/backend
+      - ./frontend:/app/frontend
+      - encore_cache:/root/.encore
+    ports:
+      - "4000:4000"
+    environment:
+      - ENCORE_ENV=development
+    command: encore run
+    networks:
+      - probyr-network
+
+  frontend:
+    image: node:18-alpine
+    container_name: probyr-frontend-dev
+    working_dir: /app/frontend
+    volumes:
+      - ./frontend:/app/frontend
+      - frontend_node_modules:/app/frontend/node_modules
+    ports:
+      - "8439:8439"
+    environment:
+      - NODE_ENV=development
+    command: sh -c "npm install && npx vite dev --host 0.0.0.0 --port 8439"
+    depends_on:
+      - backend
+    networks:
+      - probyr-network
+
+volumes:
+  encore_cache:
+  frontend_node_modules:
+
+networks:
+  probyr-network:
+    driver: bridge
