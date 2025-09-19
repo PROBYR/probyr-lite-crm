@@ -1,0 +1,27 @@
+
+> probyr-crm-backend@1.0.0 dev
+> tsx watch src/app.ts
+
+✅ Database connected successfully at: 2025-09-19T01:03:58.304Z
+node:events:485
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::4000
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at app.listen (/Users/tsjohnnychan/Documents/HAZL-customers-codebase/ProByr/probyr-lite-crm/node_modules/express/lib/application.js:635:24)
+    at startServer (/Users/tsjohnnychan/Documents/HAZL-customers-codebase/ProByr/probyr-lite-crm/backend/src/app.ts:71:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1976:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -48,
+  syscall: 'listen',
+  address: '::',
+  port: 4000
+}
+
+Node.js v24.2.0

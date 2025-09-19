@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "type": "module",
   "packageManager": "bun",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
     "@radix-ui/react-alert-dialog": "^1.1.15",

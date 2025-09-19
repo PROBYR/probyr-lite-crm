@@ -1,6 +1,6 @@
-# ProByr CRM
+# ProByr Lite CRM
 
-A modern, full-stack Customer Relationship Management (CRM) system built with Encore.ts and React.
+A modern, full-stack Customer Relationship Management (CRM) system built with Express.js and React. **100% local-first architecture** with no cloud dependencies.
 
 ## Features
 
@@ -42,11 +42,13 @@ A modern, full-stack Customer Relationship Management (CRM) system built with En
 
 ## Tech Stack
 
-### Backend (Encore.ts)
-- **Framework**: Encore.ts with TypeScript
+### Backend (Express.js)
+- **Framework**: Express.js with TypeScript
 - **Database**: PostgreSQL with SQL migrations
-- **API**: Type-safe REST APIs with automatic validation
-- **Infrastructure**: Built-in support for databases, secrets, and more
+- **API**: RESTful APIs with comprehensive validation
+- **ORM**: Native PostgreSQL with connection pooling (pg library)
+- **Security**: Helmet, CORS, and comprehensive error handling
+- **Development**: Hot reload with tsx for TypeScript
 
 ### Frontend (React)
 - **Framework**: React 18 with TypeScript
@@ -54,7 +56,7 @@ A modern, full-stack Customer Relationship Management (CRM) system built with En
 - **UI Components**: shadcn/ui component library
 - **State Management**: TanStack Query for server state
 - **Routing**: React Router
-- **Build Tool**: Vite
+- **Build Tool**: Vite with HMR (Hot Module Replacement)
 
 ## Getting Started
 
@@ -62,489 +64,390 @@ A modern, full-stack Customer Relationship Management (CRM) system built with En
 
 #### For Development:
 - Node.js 18 or later
-- Encore CLI (`npm install -g @encore/cli`)
+- PostgreSQL 12 or later
+- Git
 
-#### For Docker Deployment:
-- Docker 20.10 or later
-- Docker Compose 2.0 or later
+#### For Production:
+- Docker 20.10 or later (optional)
+- Docker Compose 2.0 or later (optional)
+
+### Quick Start (Development)
+
+**Most Common Scenario** - Get up and running immediately:
+
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/probyr-lite-crm.git
+cd probyr-lite-crm
+
+# Install dependencies
+cd backend && npm install
+cd ../frontend && npm install
+
+# Start development servers (2 terminals)
+# Terminal 1: Backend
+cd backend
+DB_USER=tsjohnnychan DB_PASSWORD="" npm run dev
+
+# Terminal 2: Frontend  
+cd frontend
+npm run dev
+```
+
+**Access Points:**
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:4000
 
 ### Installation Options
 
-#### Option 1: Docker Deployment (Recommended for Production)
+#### Option 1: Development Setup (Recommended)
 
-1. **Clone the repository**:
+**Prerequisites**: PostgreSQL database `probyr_crm` must exist
 ```bash
-git clone https://github.com/YOUR_USERNAME/probyr-crm.git
-cd probyr-crm
+# Create database (if needed)
+psql -U postgres -c "CREATE DATABASE probyr_crm;"
 ```
 
-2. **Deploy with Docker**:
+**Quick Start**:
 ```bash
-./docker-deploy.sh
+git clone https://github.com/YOUR_USERNAME/probyr-lite-crm.git
+cd probyr-lite-crm
+
+# Backend
+cd backend && npm install
+npm run migrate  # Run database migrations
+DB_USER=tsjohnnychan DB_PASSWORD="" npm run dev &
+
+# Frontend
+cd frontend && npm install  
+npm run dev
 ```
 
-This will:
-- Build the application using Docker
-- Start the application in a container
-- Make it available at http://localhost:4000
+#### Option 2: Docker Deployment (Future)
 
-#### Option 2: Native Development
-
-1. **Clone the repository**:
-```bash
-git clone https://github.com/YOUR_USERNAME/probyr-crm.git
-cd probyr-crm
-```
-
-2. **Install dependencies**:
-```bash
-npm install
-```
-
-3. **Start the development environment**:
-```bash
-encore run
-```
-
-This will start both the backend API server and the frontend development server.
-
-4. **Access the application**:
-- Frontend: http://localhost:4000
-- API Explorer: http://localhost:9400
+*Docker deployment configuration is available but not yet updated for the new Express.js architecture.*
 
 ### Database Setup
 
-The database schema is automatically created when you first run the application. The system includes:
+The database schema is created through SQL migrations. The system includes:
 
-- **Demo data**: Pre-populated with sample contacts, companies, and deals
-- **Migrations**: All database schema changes are managed through SQL migration files
-- **Seed data**: Realistic demo data for immediate testing
+- **PostgreSQL Database**: Local `probyr_crm` database
+- **Migrations**: All database schema changes managed through SQL migration files in `backend/migrations/`
+- **Sample Data**: Pre-populated with realistic demo data (contacts, companies, deals, tasks, pipelines)
+- **Auto-Setup**: Run `npm run migrate` in the backend directory to set up everything
+
+**Database Details**:
+- **Database Name**: `probyr_crm`
+- **User**: `tsjohnnychan` (or your system user)
+- **Password**: Not required for local development
+- **Tables**: 11 tables including people, companies, deals, tasks, pipelines, etc.
 
 ## Project Structure
 
 ```
-probyr-crm/
-├── backend/                 # Encore.ts backend services
-│   ├── activities/         # Activity tracking service
-│   ├── company/           # Company management service
-│   ├── deals/             # Deal pipeline service
-│   ├── people/            # Contact management service
-│   ├── tasks/             # Task management service
-│   ├── outreach/          # Email and meeting service
-│   ├── user_connections/  # Personal integrations service
-│   ├── api_auth/          # API key management service
-│   ├── third_party/       # External API endpoints
-│   └── db/                # Database migrations and setup
-├── frontend/               # React frontend application
-│   ├── components/        # Reusable UI components
-│   ├── pages/             # Page components
-│   └── lib/               # Utility functions
-├── Dockerfile             # Production Docker configuration
-├── docker-compose.yml     # Docker Compose configuration
-├── docker-deploy.sh       # Docker deployment script
-├── .dockerignore          # Docker ignore file
+probyr-lite-crm/
+├── backend/                # Express.js backend
+│   ├── src/
+│   │   ├── app.ts         # Main Express application
+│   │   ├── config/        # Database configuration
+│   │   ├── routes/        # API route modules (9 modules)
+│   │   │   ├── people.ts      # Contact management
+│   │   │   ├── companies.ts   # Company management  
+│   │   │   ├── deals.ts       # Deal pipeline
+│   │   │   ├── pipelines.ts   # Pipeline management
+│   │   │   ├── tasks.ts       # Task management
+│   │   │   ├── tags.ts        # Tag system
+│   │   │   ├── users.ts       # User management
+│   │   │   ├── stages.ts      # Pipeline stages
+│   │   │   └── activities.ts  # Activity tracking
+│   │   └── types/         # TypeScript interfaces
+│   ├── migrations/        # SQL database migrations
+│   └── package.json
+├── frontend/              # React frontend application
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── pages/         # Page components (6 main tabs)
+│   │   └── lib/           # Utility functions
+│   └── package.json
+├── HAZL.md               # Conversion documentation
+├── DEPLOYMENT.md         # Development setup guide
 └── README.md
 ```
 
 ## API Documentation
 
-The CRM provides a comprehensive REST API for third-party integrations:
+The CRM provides a comprehensive REST API with the following endpoints:
 
-### Authentication
-All API endpoints require an API key passed in the Authorization header:
-```
-Authorization: Bearer pbr_your_api_key_here
-```
+### Core Endpoints
 
-### Key Endpoints
-
-**Create Lead**:
+**People/Contacts**:
 ```bash
-POST /api/v1/leads
-Content-Type: application/json
-
-{
-  "contact": {
-    "fullName": "John Smith",
-    "email": "john@example.com",
-    "companyName": "Example Corp"
-  },
-  "deal": {
-    "dealName": "Enterprise License",
-    "value": 50000,
-    "pipelineName": "Sales Pipeline",
-    "stageName": "Lead"
-  },
-  "note": {
-    "content": "Interested in enterprise features"
-  }
-}
+GET    /people                    # List all contacts
+POST   /people                    # Create new contact
+PUT    /people/:id                # Update contact
+DELETE /people/:id                # Delete contact
+POST   /people/bulk-tag-update    # Bulk tag operations
+POST   /people/assign-owner       # Bulk assign owner
+POST   /people/delete-contacts    # Bulk delete
+POST   /people/export-contacts    # Export to CSV
 ```
 
-**Get Contacts**:
+**Companies**:
 ```bash
-GET /api/v1/contacts?limit=50&offset=0
+GET    /companies/:id             # Get company details
+PUT    /companies/:id             # Update company
+GET    /companies                 # List all companies
 ```
 
-### Permissions System
-API keys support granular permissions:
-- `leads:create` - Create new leads and contacts
-- `contacts:read` - Read contact information
-- Additional permissions available in the UI
+**Deals & Pipelines**:
+```bash
+GET    /deals                     # List deals
+POST   /deals                     # Create deal
+PUT    /deals/:id                 # Update deal
+DELETE /deals/:id                 # Delete deal
+GET    /deals/table               # Table view with filters
+
+GET    /pipelines                 # List pipelines
+GET    /pipelines/:id             # Get pipeline details
+POST   /pipelines                 # Create pipeline
+PUT    /pipelines/:id             # Update pipeline
+DELETE /pipelines/:id             # Delete pipeline
+```
+
+**Tasks**:
+```bash
+GET    /tasks                     # List tasks (with date filtering)
+POST   /tasks                     # Create task
+PUT    /tasks/:id                 # Update task
+# Supports query parameters: dueBefore, dueAfter, isCompleted
+```
+
+**Other Endpoints**:
+```bash
+GET    /tags                      # List all tags
+GET    /users                     # List all users
+GET    /stages                    # List pipeline stages
+GET    /activities                # List activities
+GET    /health                    # Health check
+```
+
+### API Features
+- **Full CRUD Operations**: Complete create, read, update, delete for all entities
+- **Bulk Operations**: Efficient bulk updates for contacts
+- **Date Filtering**: Advanced date-based filtering for tasks
+- **Transaction Support**: Database consistency for complex operations
+- **Error Handling**: Comprehensive error responses with meaningful messages
 
 ## Configuration
 
-### Email Integration
-1. Go to Settings → My Connections
-2. Connect your email account (Gmail, Outlook, or SMTP)
-3. Configure email signature if desired
+### Application Settings
+The CRM includes a comprehensive Settings tab with:
 
-### API Keys
-1. Go to Settings → API Keys
-2. Generate new API key with required permissions
-3. Use the key for third-party integrations
+1. **Company Information**: Edit company details and branding
+2. **Pipeline Management**: Create and configure sales pipelines with custom stages
+3. **User Management**: Manage team members and permissions
+4. **Tags System**: Organize contacts with custom tags
+5. **Data Export**: Export contacts and deals to CSV
 
-### Pipeline Setup
-1. Go to Settings → Pipelines
-2. Create custom pipelines for different sales processes
-3. Configure stages with win/loss indicators
+### Development Configuration
+- **Database**: Configure via environment variables or direct connection
+- **CORS**: Enabled for frontend communication (localhost:5173)
+- **Hot Reload**: Both backend (tsx) and frontend (Vite HMR) support live reloading
+- **Error Handling**: Comprehensive error logging and user feedback
 
-## 🚀 Deployment Guide
+## 🚀 Quick Development Guide
 
-This section provides comprehensive deployment instructions for Probyr Lite CRM. Choose the deployment method that best fits your needs.
+### 🎯 TL;DR - Get Running in 2 Minutes
 
-### 🎯 Quick Start (TL;DR)
-
-**For Production (Recommended):**
+**For Development (Most Common):**
 ```bash
-git clone https://github.com/YOUR_USERNAME/probyr-crm.git
-cd probyr-crm
-./docker-deploy.sh
-# Access at http://localhost:4000
+git clone https://github.com/YOUR_USERNAME/probyr-lite-crm.git
+cd probyr-lite-crm
+
+# Backend (Terminal 1)
+cd backend && npm install
+DB_USER=tsjohnnychan DB_PASSWORD="" npm run dev
+
+# Frontend (Terminal 2)  
+cd frontend && npm install && npm run dev
+
+# Access at:
+# Frontend: http://localhost:5173
+# Backend: http://localhost:4000
 ```
 
-**For Development:**
+**First Time Setup:**
 ```bash
-git clone https://github.com/YOUR_USERNAME/probyr-crm.git
-cd probyr-crm
-npm install
-encore run
-# Access at http://localhost:4000
+# Create database (if needed)
+psql -U postgres -c "CREATE DATABASE probyr_crm;"
+
+# Run migrations (if database is empty)
+cd backend && npm run migrate
 ```
 
-### 📋 Deployment Options Summary
+### 📋 Current Architecture Status
 
-| Method | Best For | Difficulty | Setup Time | Production Ready |
-|--------|----------|------------|------------|------------------|
-| 🐳 Docker | Production | Easy | 5 minutes | ✅ Yes |
-| ☁️ Encore Cloud | Managed hosting | Easy | 10 minutes | ✅ Yes |
-| 🖥️ Custom Server | Self-hosted | Medium | 15 minutes | ✅ Yes |
-| 🌐 Cloud Platforms | Scalable hosting | Medium | 20 minutes | ✅ Yes |
-| 💻 Native | Development | Easy | 5 minutes | ❌ No |
+| Component | Status | Technology | Port |
+|-----------|--------|------------|------|
+| 🗄️ **Backend** | ✅ **Complete** | Express.js + TypeScript | 4000 |
+| 🎨 **Frontend** | ✅ **Complete** | React + Vite | 5173 |
+| 🗃️ **Database** | ✅ **Complete** | PostgreSQL (Local) | 5432 |
+| 🐳 **Docker** | ⚠️ **Needs Update** | Docker config outdated | - |
+| ☁️ **Cloud Deploy** | ⚠️ **Future** | Not yet configured | - |
 
-### 🐳 Docker Deployment (Recommended for Production)
+**Current Status**: ✅ **Fully Functional Development Environment**
 
-The application is fully dockerized and production-ready. This is the **recommended deployment method** for production environments.
+### 🔧 Development Features
 
-#### Prerequisites
-- Docker 20.10 or later
-- Docker Compose 2.0 or later
-- At least 2GB RAM available
-- Port 4000 available (or configure custom port)
+**✅ What's Working:**
+- **All CRM Tabs**: Contacts, Companies, Deals, Pipeline, Tasks, Settings
+- **Full CRUD Operations**: Create, read, update, delete for all entities
+- **Real-time Updates**: Live data synchronization between frontend and backend
+- **Hot Reload**: Both backend (tsx) and frontend (Vite HMR)
+- **Database Transactions**: Consistent data operations
+- **Bulk Operations**: Efficient contact management
+- **Date Filtering**: Advanced task filtering by due dates
+- **Error Handling**: Comprehensive error management and user feedback
 
-#### Quick Deployment (One Command)
+**🛠️ Development Tools:**
+- **API Testing**: All endpoints can be tested with curl
+- **Database Access**: Direct PostgreSQL access for debugging
+- **Type Safety**: Full TypeScript integration across stack
+- **Migration System**: SQL-based database schema management
+
+### 📚 Additional Documentation
+
+For detailed setup and troubleshooting, see:
+
+- **[DEPLOYMENT.md](DEPLOYMENT.md)**: Complete development setup guide
+- **[HAZL.md](HAZL.md)**: Conversion log from Encore.ts to Express.js
+- **[DEVELOPMENT.md](DEVELOPMENT.md)**: Additional development notes
+
+### 🔍 Testing Your Setup
+
+**Test Backend API:**
 ```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/probyr-crm.git
-cd probyr-crm
+# Health check
+curl http://localhost:4000/health
 
-# Deploy with one command
-./docker-deploy.sh
+# Get contacts
+curl http://localhost:4000/people
+
+# Get pipelines  
+curl http://localhost:4000/pipelines
 ```
 
-#### Manual Docker Deployment
-```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/probyr-crm.git
-cd probyr-crm
-
-# Build and start the application
-docker-compose up --build -d
-
-# Check status
-docker ps
-
-# View logs
-docker logs -f probyr-crm
-
-# Stop the application
-docker-compose down
-```
-
-#### Docker Configuration Features
-- **Port**: 4000 (configurable in docker-compose.yml)
-- **Health Check**: Built-in health monitoring every 30 seconds
-- **Auto-restart**: Container restarts automatically on failure
-- **Security**: Runs as non-root user (uid: 1001)
-- **Multi-stage Build**: Optimized image size and build process
-- **Production Ready**: Includes all necessary production optimizations
-
-### ☁️ Encore Cloud Deployment
-
-For Encore's managed cloud deployment (requires Encore CLI):
-
-#### Prerequisites
-- Encore CLI installed (`npm install -g @encore/cli`)
-- Encore account and project setup
-
-#### Deploy to Encore Cloud
-```bash
-# Initialize Encore project (if not already done)
-encore app create
-
-# Deploy to production
-git add .
-git commit -m "Deploy to production"
-git push encore main
-```
-
-#### Benefits of Encore Cloud
-- Automatic scaling and load balancing
-- Built-in database management
-- SSL certificates and CDN
-- Monitoring and logging
-- Zero-downtime deployments
-
-### 🖥️ Custom Server Deployment
-
-Deploy on your own server or VPS:
-
-#### Option 1: Docker on Custom Server
-```bash
-# On your server, clone the repository
-git clone https://github.com/YOUR_USERNAME/probyr-crm.git
-cd probyr-crm
-
-# Build the Docker image
-docker build -t probyr-crm .
-
-# Run the container
-docker run -d \
-  --name probyr-crm \
-  -p 4000:4000 \
-  --restart unless-stopped \
-  probyr-crm
-```
-
-#### Option 2: Docker Compose on Custom Server
-```bash
-# Clone and deploy
-git clone https://github.com/YOUR_USERNAME/probyr-crm.git
-cd probyr-crm
-docker-compose up -d
-```
-
-#### Option 3: Native Installation (Development Only)
-```bash
-# Install dependencies
-npm install
-
-# Install Encore CLI
-npm install -g @encore/cli
-
-# Start the application
-encore run
-```
-
-### 🌐 Cloud Platform Deployments
-
-#### AWS EC2 Deployment
-```bash
-# Launch EC2 instance (Ubuntu 20.04+ recommended)
-# Install Docker
-sudo apt update
-sudo apt install docker.io docker-compose -y
-sudo systemctl start docker
-sudo systemctl enable docker
-
-# Clone and deploy
-git clone https://github.com/YOUR_USERNAME/probyr-crm.git
-cd probyr-crm
-sudo docker-compose up -d
-```
-
-#### DigitalOcean Droplet Deployment
-```bash
-# Create a droplet (Ubuntu 20.04+ recommended)
-# Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo apt install docker-compose -y
-
-# Clone and deploy
-git clone https://github.com/YOUR_USERNAME/probyr-crm.git
-cd probyr-crm
-sudo docker-compose up -d
-```
-
-#### Google Cloud Platform Deployment
-```bash
-# Create a Compute Engine instance
-# Install Docker
-sudo apt update
-sudo apt install docker.io docker-compose -y
-
-# Clone and deploy
-git clone https://github.com/YOUR_USERNAME/probyr-crm.git
-cd probyr-crm
-sudo docker-compose up -d
-```
-
-### ⚙️ Configuration
-
-#### Environment Variables
-The application supports the following environment variables:
-
-- `NODE_ENV`: Set to `production` for production deployment
-- `ENCORE_ENV`: Set to `production` for Encore backend configuration
-- `PORT`: Override the default port (default: 4000)
-
-#### Port Configuration
-To change the port, update the `docker-compose.yml` file:
-```yaml
-ports:
-  - "YOUR_PORT:4000"
-```
-
-Or set environment variable:
-```bash
-export PORT=8080
-docker-compose up -d
-```
-
-#### SSL/HTTPS Setup
-For production deployments, set up SSL certificates:
-
-```bash
-# Using Let's Encrypt with nginx reverse proxy
-# Install nginx and certbot
-sudo apt install nginx certbot python3-certbot-nginx
-
-# Configure nginx reverse proxy
-sudo nano /etc/nginx/sites-available/probyr-crm
-```
-
-Nginx configuration example:
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-    
-    location / {
-        proxy_pass http://localhost:4000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-```bash
-# Enable the site and get SSL certificate
-sudo ln -s /etc/nginx/sites-available/probyr-crm /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl reload nginx
-sudo certbot --nginx -d your-domain.com
-```
-
-For other deployment options, refer to the [Encore.ts deployment documentation](https://encore.dev/docs/deploy).
-
-### Docker Troubleshooting
-
-#### Common Issues
-
-**Port already in use**:
-```bash
-# Check what's using port 4000
-lsof -i :4000
-
-# Kill the process
-sudo kill -9 $(lsof -ti:4000)
-```
-
-**Docker build fails**:
-```bash
-# Clean Docker cache
-docker system prune -a
-
-# Rebuild without cache
-docker-compose build --no-cache
-```
-
-**Container won't start**:
-```bash
-# Check container logs
-docker logs probyr-crm
-
-# Check container status
-docker ps -a
-```
-
-**Permission issues**:
-```bash
-# Ensure Docker daemon is running
-sudo systemctl start docker
-
-# Add user to docker group (Linux)
-sudo usermod -aG docker $USER
-```
-
-#### Docker Commands Reference
-
-```bash
-# View running containers
-docker ps
-
-# View all containers
-docker ps -a
-
-# View container logs
-docker logs -f probyr-crm
-
-# Execute commands in container
-docker exec -it probyr-crm sh
-
-# Stop and remove containers
-docker-compose down
-
-# Remove all containers and images
-docker-compose down --rmi all
-
-# View Docker system info
-docker system df
-```
+**Test Frontend:**
+- Open http://localhost:5173
+- Navigate through all 6 tabs
+- Create/edit contacts, deals, tasks
+- Verify all functionality works
 
 ## Development
 
+### 🏗️ Architecture Conversion
+
+This CRM was successfully converted from **Encore.ts** (cloud-dependent) to **Express.js** (local-first):
+
+**Before (Encore.ts)**:
+- Required cloud authentication (`encore auth login`)
+- Cloud database provisioning
+- Secrets management via api.encore.cloud
+- Vendor lock-in to Encore platform
+
+**After (Express.js)**:
+- ✅ **100% Local**: No cloud dependencies
+- ✅ **Self-Contained**: PostgreSQL + Express.js + React
+- ✅ **Portable**: Can run anywhere with Node.js + PostgreSQL
+- ✅ **Full Control**: Complete ownership of code and data
+
+See [HAZL.md](HAZL.md) for complete conversion documentation.
+
 ### Adding New Features
 
-1. **Backend Services**: Create new services in the `backend/` directory
-2. **Database Changes**: Add new migration files in `backend/db/migrations/`
-3. **Frontend Components**: Add components in `frontend/components/`
-4. **API Integration**: Use the auto-generated backend client from `~backend/client`
+1. **Backend Routes**: Add new endpoints in `backend/src/routes/`
+2. **Database Changes**: Create new migration files in `backend/migrations/`
+3. **Frontend Components**: Add components in `frontend/src/components/`
+4. **API Integration**: Frontend uses fetch API to communicate with Express backend
+
+### Current Feature Status
+
+**✅ Fully Implemented:**
+- Contact management with tagging and bulk operations
+- Company management and relationships
+- Deal pipeline with drag-and-drop Kanban view
+- Task management with date filtering
+- Pipeline and stage management
+- Settings and configuration
+- Data export functionality
+
+**⚠️ Legacy Features (Not Yet Converted):**
+- Email integration and tracking
+- Meeting scheduling
+- API key management
+- Third-party integrations
 
 ### Testing
 
-Run the test suite:
+**Manual Testing:**
 ```bash
-npm test
+# Test all major endpoints
+curl http://localhost:4000/health
+curl http://localhost:4000/people
+curl http://localhost:4000/companies/1
+curl http://localhost:4000/pipelines
+curl http://localhost:4000/tasks
 ```
 
-The project includes:
-- End-to-end tests with Playwright
-- Component tests for critical UI flows
-- API integration tests
+**Frontend Testing:**
+- Navigate through all tabs: Contacts, Companies, Deals, Pipeline, Tasks, Settings
+- Test CRUD operations: Create, edit, delete contacts and deals
+- Test bulk operations: Tag multiple contacts, assign owners
+- Test pipeline functionality: Drag deals between stages
+- Test task management: Create tasks, mark as complete
+
+## Troubleshooting
+
+### Common Development Issues
+
+**Backend won't start**:
+```bash
+# Check if port 4000 is in use
+lsof -i :4000
+
+# Kill process using port 4000
+kill -9 $(lsof -t -i:4000)
+
+# Check database connection
+psql -U tsjohnnychan -d probyr_crm -c "SELECT 1;"
+```
+
+**Frontend won't start**:
+```bash
+# Check if port 5173 is in use
+lsof -i :5173
+
+# Kill process and restart
+kill -9 $(lsof -t -i:5173)
+cd frontend && npm run dev
+```
+
+**Database connection failed**:
+```bash
+# Ensure PostgreSQL is running
+brew services list | grep postgres
+
+# Create database if missing
+psql -U postgres -c "CREATE DATABASE probyr_crm;"
+
+# Run migrations
+cd backend && npm run migrate
+```
+
+**API errors in frontend**:
+- Verify backend is running on port 4000
+- Check browser console for CORS errors
+- Ensure database has data (run migrations)
 
 ## Contributing
 
@@ -562,12 +465,15 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For questions and support:
 - Open an issue on GitHub
-- Check the [Encore.ts documentation](https://encore.dev/docs)
-- Review the in-app help and tooltips
+- Check [DEPLOYMENT.md](DEPLOYMENT.md) for setup issues
+- Review [HAZL.md](HAZL.md) for conversion details
+- Check [DEVELOPMENT.md](DEVELOPMENT.md) for additional development notes
 
 ## Acknowledgments
 
-- Built with [Encore.ts](https://encore.dev) - The Backend Development Platform
-- UI components from [shadcn/ui](https://ui.shadcn.com)
-- Icons from [Lucide React](https://lucide.dev)
-- Styled with [Tailwind CSS](https://tailwindcss.com)
+- **Backend**: Built with [Express.js](https://expressjs.com) and [PostgreSQL](https://postgresql.org)
+- **Frontend**: UI components from [shadcn/ui](https://ui.shadcn.com)
+- **Icons**: [Lucide React](https://lucide.dev)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com)
+- **Build Tools**: [Vite](https://vitejs.dev) for frontend, [tsx](https://github.com/esbuild-kit/tsx) for backend
+- **Originally**: Converted from Encore.ts to Express.js for local-first architecture

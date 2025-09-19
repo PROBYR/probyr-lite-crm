@@ -1,15 +1,38 @@
 {
-  "name": "backend",
+  "name": "probyr-crm-backend",
   "version": "1.0.0",
   "type": "module",
-  "packageManager": "bun",
+  "description": "ProByr CRM Express.js Backend",
+  "main": "dist/app.js",
   "scripts": {
-    "build": "cd ../frontend && bun install && vite build --outDir=../backend/frontend/dist"
+    "dev": "tsx watch src/app.ts",
+    "build": "tsc",
+    "start": "node dist/app.js",
+    "migrate": "node dist/scripts/migrate.js",
+    "seed": "node dist/scripts/seed.js"
   },
   "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "dotenv": "^16.3.1",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.4",
+    "nodemailer": "^6.9.7",
     "encore.dev": "^1.50.0"
   },
   "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/pg": "^8.10.2",
+    "@types/cors": "^2.8.17",
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/multer": "^1.4.11",
+    "@types/nodemailer": "^6.4.14",
+    "@types/node": "^20.8.0",
+    "tsx": "^4.1.0",
     "typescript": "^5.9.2"
   }
 }

@@ -1,92 +1,278 @@
-# Probyr Lite CRM - Deployment Guide
+# ProByr Lite CRM - Development Server Guide
 
-This application now supports **dynamic port assignment** to avoid conflicts when deploying on different computers.
+**Quick Start for Continuous Development** - Get the server running immediately!
 
-## 🚀 Quick Deployment Options
+## 🚀 Start Development Servers (Quick)
 
-### Option 1: Auto-Deploy (Recommended)
-Automatically finds available ports and deploys:
+**Most Common Scenario** - Database already exists:
 ```bash
-./auto-deploy.sh
-```
+# Terminal 1: Start Backend
+cd backend
+DB_USER=tsjohnnychan DB_PASSWORD="" npm run dev
 
-### Option 2: Native Development Server
-```bash
-./deploy.sh
-```
-
-### Option 3: Docker Development Server
-```bash
-./docker-run.sh
-```
-
-### Option 4: Docker Production Server
-```bash
-./docker-deploy.sh
-```
-
-### Option 5: Manual Deployment
-```bash
+# Terminal 2: Start Frontend  
 cd frontend
-npm install
-npx vite dev --host 0.0.0.0 --port 0  # 0 = auto-assign port
+npm run dev
 ```
 
-## Features Enabled
+**Access Points:**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:4000
 
-✅ **Dynamic Port Assignment**: Automatically finds available ports to avoid conflicts
-✅ **Live Code Reflection**: Changes to source code are automatically reflected in the browser
-✅ **Hot Module Replacement**: Instant updates without page refresh
-✅ **External Access**: Bound to 0.0.0.0 for external access
-✅ **Development Mode**: Optimized for development with fast rebuilds
-✅ **Volume Mounting**: Docker option includes volume mounting for live file watching
-✅ **Environment Variables**: Configurable via ENCORE_PORT, VITE_PORT, VITE_BACKEND_URL
+## 🏗️ Architecture Overview
 
-## Access Points
+- **Backend**: Express.js + TypeScript (Port 4000)
+- **Frontend**: React + Vite (Port 5173) 
+- **Database**: PostgreSQL `probyr_crm` (Local)
+- **User**: `tsjohnnychan` (no password required)
+- **No Cloud Dependencies**: 100% local development environment
 
-The application will automatically assign available ports:
-- **Frontend**: http://localhost:[AUTO-ASSIGNED-PORT]
-- **Backend**: http://localhost:[AUTO-ASSIGNED-PORT]
+## 🔧 First Time Setup (Only if needed)
 
-## Configuration
-
-The application supports dynamic configuration via environment variables:
-- `ENCORE_PORT`: Backend port (default: 4000)
-- `VITE_PORT`: Frontend port (default: 0 = auto-assign)
-- `VITE_BACKEND_URL`: Backend URL for frontend (default: http://localhost:4000)
-- Host: 0.0.0.0 (external access enabled)
-- Development mode with live reload
-- CORS enabled
-- Flexible port binding
-- Optimized dependencies for React
-
-## Troubleshooting
-
-If the deployment fails:
-1. **Port Conflicts**: Use `./auto-deploy.sh` to automatically find available ports
-2. **Manual Port Check**: `lsof -ti:4000` or `lsof -ti:3000` to check port usage
-3. **Kill Existing Processes**: `lsof -ti:[PORT] | xargs kill -9`
-4. **Docker Clean Environment**: Try `./docker-run.sh` or `./docker-deploy.sh`
-5. **Dependencies**: Check that all dependencies are installed: `cd frontend && npm install`
-6. **Environment Variables**: Set custom ports: `ENCORE_PORT=5000 VITE_PORT=3001 ./start-dev.sh`
-
-## Environment Variables
-
-You can customize the deployment by setting these environment variables:
-
+### Database Setup (If not already done)
 ```bash
-# Custom ports
-export ENCORE_PORT=5000        # Backend port
-export VITE_PORT=3001          # Frontend port (0 = auto-assign)
-export VITE_BACKEND_URL="http://localhost:5000"  # Backend URL for frontend
+# Connect to PostgreSQL
+psql -U postgres
 
-# Then run any deployment script
+# Create database (if doesn't exist)
+CREATE DATABASE probyr_crm;
+
+# Grant permissions to your user
+GRANT ALL PRIVILEGES ON DATABASE probyr_crm TO tsjohnnychan;
+```
+
+### Run Migrations (If database is empty)
+```bash
+cd backend
+npm run migrate
+```
+
+### Environment Configuration (Optional)
+The backend works with environment variables, but defaults are fine for development:
+```bash
+# Current working configuration
+DB_HOST=localhost
+DB_PORT=5432  
+DB_NAME=probyr_crm
+DB_USER=tsjohnnychan
+DB_PASSWORD=""
+PORT=4000
+```
+
+**Note**: No `.env` file needed - just pass `DB_USER=tsjohnnychan DB_PASSWORD=""` when starting!
+
+### Install Dependencies (If needed)
+```bash
+# Backend dependencies
+cd backend && npm install
+
+# Frontend dependencies  
+cd frontend && npm install
+```
+
+## 🚀 Alternative Start Methods
+
+### Method 1: Individual Terminals (Recommended)
+```bash
+# Terminal 1: Backend
+cd backend
+DB_USER=tsjohnnychan DB_PASSWORD="" npm run dev
+
+# Terminal 2: Frontend  
+cd frontend
+npm run dev
+```
+
+### Method 2: Using Development Script
+```bash
+# Start both servers with one command
 ./start-dev.sh
 ```
 
-## Development Features
+### Method 3: Background Process
+```bash
+# Start backend in background
+cd backend && DB_USER=tsjohnnychan DB_PASSWORD="" npm run dev &
 
-- **File Watching**: Automatically detects file changes
-- **Fast Refresh**: React components update without losing state
-- **Error Overlay**: Development errors are displayed in the browser
-- **Source Maps**: Full debugging support in development
+# Start frontend normally
+cd frontend && npm run dev
+```
+
+## 🔧 Development Environment Details
+
+### Backend (Express.js)
+- **Port**: 4000 (configurable via PORT env var)
+- **Hot Reload**: Uses `tsx --watch` for TypeScript hot reloading
+- **Database**: PostgreSQL with connection pooling
+- **CORS**: Enabled for frontend communication
+- **Middleware**: Helmet for security, body parsing, etc.
+
+### Frontend (React + Vite)
+- **Port**: 5173 (Vite default)
+- **Hot Reload**: Vite HMR (Hot Module Replacement)
+- **API Client**: Configured to connect to backend at `http://localhost:4000`
+- **Development Mode**: Source maps and error overlay enabled
+
+### Database (PostgreSQL)
+- **Local Instance**: No cloud dependencies
+- **Migrations**: SQL files in `backend/migrations/`
+- **Sample Data**: Automatically loaded during migration
+- **Connection Pooling**: Configured via `pg` library
+
+## 📊 Available Endpoints
+
+### Backend API Endpoints:
+- **Health Check**: `GET http://localhost:4000/health`
+- **People**: `GET/POST/PUT/DELETE http://localhost:4000/people`
+- **Companies**: `GET/PUT http://localhost:4000/companies/:id`
+- **Pipelines**: `GET/POST/PUT/DELETE http://localhost:4000/pipelines`
+- **Deals**: `GET/POST/PUT/DELETE http://localhost:4000/deals`
+- **Tasks**: `GET/POST/PUT http://localhost:4000/tasks`
+- **Tags**: `GET http://localhost:4000/tags`
+- **Users**: `GET http://localhost:4000/users`
+- **Stages**: `GET http://localhost:4000/stages`
+- **Activities**: `GET http://localhost:4000/activities`
+
+### Frontend Application:
+- **Main App**: `http://localhost:5173`
+- **All CRM Tabs**: Contacts, Companies, Deals, Pipeline, Tasks, Settings
+
+## 🧪 Testing the Setup
+
+### 1. Test Backend API:
+```bash
+# Health check
+curl http://localhost:4000/health
+
+# Get people/contacts  
+curl http://localhost:4000/people
+
+# Get companies (need ID, try ID 1)
+curl http://localhost:4000/companies/1
+
+# Get all pipelines
+curl http://localhost:4000/pipelines
+```
+
+### 2. Test Frontend:
+- Open `http://localhost:5173` in your browser
+- Navigate through all tabs:
+  - ✅ Contacts Tab
+  - ✅ Companies Tab  
+  - ✅ Deals Tab
+  - ✅ Pipeline Tab
+  - ✅ Tasks Tab
+  - ✅ Settings Tab
+
+### 3. Test Database:
+```bash
+# Connect to database
+psql -U tsjohnnychan -d probyr_crm
+
+# Check tables
+\dt
+
+# Sample queries
+SELECT COUNT(*) FROM people;
+SELECT COUNT(*) FROM companies;
+SELECT COUNT(*) FROM deals;
+```
+
+## 🔄 Development Workflow
+
+### Code Changes:
+- **Backend**: TypeScript files auto-reload with `tsx --watch`
+- **Frontend**: React components hot-reload with Vite HMR
+- **Database**: Run migrations manually when schema changes
+
+### Adding New Features:
+1. **Backend Routes**: Add to `backend/src/routes/`
+2. **Frontend Components**: Add to `frontend/src/components/`
+3. **Database Changes**: Create new migration in `backend/migrations/`
+
+### Debugging:
+- **Backend Logs**: Check terminal running `npm run dev`
+- **Frontend Errors**: Check browser console and error overlay
+- **Database Queries**: Enable query logging in database config
+
+## ⚠️ Troubleshooting
+
+### Common Issues:
+
+**1. Port Already in Use**:
+```bash
+# Kill process on port 4000 (backend)
+kill -9 $(lsof -t -i:4000)
+
+# Kill process on port 5173 (frontend)
+kill -9 $(lsof -t -i:5173)
+```
+
+**2. Database Connection Failed**:
+```bash
+# Check if PostgreSQL is running
+brew services list | grep postgres
+
+# Test database connection
+psql -U tsjohnnychan -d probyr_crm -c "SELECT 1;"
+
+# Check if database exists
+psql -U postgres -l | grep probyr_crm
+```
+
+**3. Migration Errors**:
+```bash
+# Reset and re-run migrations
+cd backend
+npm run migrate
+```
+
+**4. Frontend API Errors**:
+- Verify backend is running on port 4000
+- Check CORS configuration in backend
+- Verify API endpoints are responding
+
+**5. Dependencies Issues**:
+```bash
+# Clean install backend
+cd backend && rm -rf node_modules && npm install
+
+# Clean install frontend  
+cd frontend && rm -rf node_modules && npm install
+```
+
+## 📝 Development Notes
+
+### Project Structure:
+```
+probyr-lite-crm/
+├── backend/                 # Express.js backend
+│   ├── src/
+│   │   ├── app.ts          # Main Express app
+│   │   ├── config/         # Database config
+│   │   ├── routes/         # API routes (9 modules)
+│   │   └── types/          # TypeScript interfaces
+│   ├── migrations/         # SQL migrations
+│   └── package.json
+├── frontend/               # React frontend
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── pages/          # Page components
+│   │   └── lib/            # Utilities
+│   └── package.json
+└── HAZL.md                # Conversion documentation
+```
+
+### Key Features:
+- ✅ **Zero Cloud Dependencies**: Completely local
+- ✅ **Full CRUD Operations**: All CRM features working
+- ✅ **Real-time Updates**: Live data synchronization  
+- ✅ **Transaction Support**: Database consistency
+- ✅ **Error Handling**: Comprehensive error management
+- ✅ **Type Safety**: Full TypeScript integration
+
+---
+
+**Status**: ✅ **Development Environment Ready**
+**Last Updated**: September 19, 2025
+**Conversion**: Encore.ts → Express.js **COMPLETE**
