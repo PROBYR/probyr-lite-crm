@@ -11,7 +11,24 @@ import type { CookieWithOptions } from "encore.dev/api";
  */
 export type BaseURL = string
 
-export const Local: BaseURL = "http://localhost:4000"
+// Dynamic API URL detection
+function getApiUrl(): BaseURL {
+  // If VITE_API_URL is set, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // If in Docker (same origin), use relative path
+  if (window.location.port === '4000') {
+    return window.location.origin;
+  }
+  
+  // Development fallback - try to detect backend port
+  const currentHost = window.location.hostname;
+  return `http://${currentHost}:4000`;
+}
+
+export const Local: BaseURL = getApiUrl()
 
 /**
  * Environment returns a BaseURL for calling the cloud environment with the given name.
@@ -1849,4 +1866,4 @@ export enum ErrCode {
     Unauthenticated = "unauthenticated",
 }
 
-export default new Client(import.meta.env.VITE_CLIENT_TARGET, { requestInit: { credentials: "include" } });
+export default new Client(import.meta.env.VITE_CLIENT_TARGET || Local, { requestInit: { credentials: "include" } });

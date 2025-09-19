@@ -23,8 +23,8 @@ export default defineConfig({
     host: true,
     strictPort: false, // Allow port changes if specified port is unavailable
     open: false,
-    cors: true,
-    allowedHosts: ['crm.probyr.com', 'localhost', '0.0.0.0']
+    cors: true
+    // No allowedHosts restriction - allow all hosts
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom']

@@ -37,7 +37,7 @@ services:
       - "5173:5173"
     environment:
       - NODE_ENV=development
-      - VITE_API_URL=http://localhost:4000
+      # No VITE_API_URL set - will auto-detect API URL dynamically
     volumes:
       - ./frontend/src:/app/src:ro              # Mount source code (read-only)
       - ./frontend/public:/app/public:ro

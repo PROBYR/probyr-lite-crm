@@ -172,7 +172,7 @@ services:
     ports:
       - "5173:5173"
     environment:
-      - VITE_API_URL=http://localhost:4000
+      # No VITE_API_URL needed - auto-detects API URL
     volumes:
       - ./frontend/src:/app/src:ro       # Mount source code (read-only)
       - ./frontend/public:/app/public:ro

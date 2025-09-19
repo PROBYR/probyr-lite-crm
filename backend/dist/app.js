@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 4000;
 // Middleware
 app.use(helmet());
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: true, // Allow all origins
     credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -88,7 +88,7 @@ const startServer = async () => {
         app.listen(PORT, () => {
             console.log(`🚀 ProByr CRM API server running on port ${PORT}`);
             console.log(`📊 Health check: http://localhost:${PORT}/health`);
-            console.log(`🌐 CORS enabled for: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+            console.log(`🌐 CORS enabled for: ALL origins`);
         });
     }
     catch (error) {
