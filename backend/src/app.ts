@@ -2,7 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { testConnection } from './config/database.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Import routes
 import peopleRoutes from './routes/people.js';
@@ -49,6 +54,21 @@ app.use('/users', usersRoutes);
 app.use('/stages', stagesRoutes);
 app.use('/activities', activitiesRoutes);
 
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+  app.use(express.static(frontendDistPath));
+  
+  // Serve React app for all non-API routes
+  app.get('*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api') || req.path.startsWith('/health')) {
+      return res.status(404).json({ error: 'API route not found' });
+    }
+    res.sendFile(path.join(frontendDistPath, 'index.html'));
+  });
+}
+
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Error:', err);
@@ -63,10 +83,12 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+// 404 handler for development (production uses catch-all above)
+if (process.env.NODE_ENV !== 'production') {
+  app.use('*', (req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+  });
+}
 
 // Start server
 const startServer = async () => {

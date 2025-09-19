@@ -135,7 +135,7 @@ router.get('/', async (req: Request, res: Response) => {
         lastName: row.owner_last_name || undefined,
         email: row.owner_email || '',
       } : undefined,
-      tags: Array.isArray(row.tags) ? row.tags.filter(t => t && t.id) : [],
+      tags: Array.isArray(row.tags) ? row.tags.filter((t: any) => t && t.id) : [],
     }));
 
     const response: ListPeopleResponse = { people, total };
@@ -209,7 +209,7 @@ router.get('/:id', async (req: Request, res: Response) => {
         lastName: row.owner_last_name || undefined,
         email: row.owner_email || '',
       } : undefined,
-      tags: Array.isArray(row.tags) ? row.tags.filter(t => t && t.id) : [],
+      tags: Array.isArray(row.tags) ? row.tags.filter((t: any) => t && t.id) : [],
     };
 
     res.json(person);

@@ -80,7 +80,7 @@ router.get('/:id', async (req, res) => {
     const stageIds = stages.map(s => s.id);
 
     // Get deals for all stages in this pipeline
-    let deals = [];
+    let deals: any[] = [];
     if (stageIds.length > 0) {
       const dealsResult = await pool.query(`
         SELECT 
